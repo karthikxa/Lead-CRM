@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 import { VALID_CREDENTIALS, SHEET_CSV_URLS } from '../constants';
 import { neuralDB } from './localDb';
 import { Lead, LeadStatus } from '../types';
@@ -61,10 +62,49 @@ async function fetchSheetCSV(url: string): Promise<any[]> {
   } catch (e) {
     console.error("CSV Fetch Error:", e);
     return [];
+=======
+import { API_URL } from '../constants';
+
+async function callGAS(payload: any) {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'omit',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      redirect: 'follow',
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    const text = await response.text();
+    
+    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+      throw new Error("Neural link unauthorized or script deployment error.");
+    }
+
+    const data = JSON.parse(text);
+
+    if (data.success === false) {
+      throw new Error(data.error || "Action rejected by command center.");
+    }
+
+    return data;
+  } catch (error: any) {
+    console.error("Neural Link Failure:", error);
+    throw error;
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
   }
 }
 
 export async function loginUser(username: string, password_input: string) {
+<<<<<<< HEAD
   const user = VALID_CREDENTIALS.find(u => u.username === username && u.password === password_input);
   if (!user) return { success: false, message: "Access Denied: Neural link rejected." };
 
@@ -171,6 +211,77 @@ export async function updateTask(username: string, lead: Lead) {
   return submitLead(username, lead);
 }
 
+=======
+  try {
+    const res = await callGAS({
+      action: "login",
+      username,
+      password: password_input
+    });
+    return {
+      success: true,
+      user: res.user,
+      role: (res.role === 'admin' ? 'ADMIN' : 'EMPLOYEE') as 'ADMIN' | 'EMPLOYEE'
+    };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+export async function fetchActiveData(username: string) {
+  try {
+    const res = await callGAS({
+      action: "fetchActive",
+      username
+    });
+    return { status: "SUCCESS", leads: res.data || [] };
+  } catch (e: any) {
+    return { status: "ERROR", error: e.message };
+  }
+}
+
+export async function fetchTasksData(username: string) {
+  try {
+    const res = await callGAS({
+      action: "fetchTasks",
+      username
+    });
+    return { status: "SUCCESS", leads: res.data || [] };
+  } catch (e: any) {
+    return { status: "ERROR", error: e.message };
+  }
+}
+
+export async function fetchAnalyticsData(username: string) {
+  try {
+    const res = await callGAS({
+      action: "fetchAnalytics",
+      username
+    });
+    return { status: "SUCCESS", leads: res.data || [] };
+  } catch (e: any) {
+    return { status: "ERROR", error: e.message };
+  }
+}
+
+export async function appendToDB(username: string, leads: any[]) {
+  try {
+    const res = await callGAS({
+      action: "appendCompleted",
+      username,
+      leads
+    });
+    return { status: "SUCCESS", inserted: res.inserted };
+  } catch (e: any) {
+    return { status: "ERROR", error: e.message };
+  }
+}
+
+/**
+ * Communicates with the Vercel Serverless API proxy to generate AI insights.
+ * This prevents the Gemini API key from being exposed to the client.
+ */
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
 export async function generateAIIntel(company: string, type: string) {
   try {
     const response = await fetch('/api/gemini', {
@@ -184,6 +295,10 @@ export async function generateAIIntel(company: string, type: string) {
     const data = await response.json();
     return data.text || "Insight unavailable.";
   } catch (error) {
+<<<<<<< HEAD
+=======
+    console.error("AI Bridge Error:", error);
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
     return "Intelligence offline.";
   }
 }

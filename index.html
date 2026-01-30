@@ -9,7 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
+<<<<<<< HEAD
           --bg-black: #050403;
+=======
+          --bg-black: #030303;
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
           --bg-light: #fdfdfd;
           --accent-coral: #eb7c52;
         }
@@ -29,6 +33,7 @@
           z-index: 0;
         }
         .system-grid {
+<<<<<<< HEAD
           background-image: radial-gradient(circle, rgba(235, 124, 82, 0.1) 1px, transparent 1px);
           background-size: 30px 30px;
         }
@@ -47,12 +52,18 @@
           color: white;
         }
 
+=======
+          background-image: radial-gradient(circle, rgba(235, 124, 82, 0.15) 1px, transparent 1px);
+          background-size: 30px 30px;
+        }
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { 
           background: rgba(255, 255, 255, 0.1); 
           border-radius: 10px; 
         }
+<<<<<<< HEAD
 
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -60,6 +71,23 @@
         }
         .stagger-item { animation: fadeIn 0.6s ease forwards; }
     </style>
+=======
+    </style>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            document.body.innerHTML = `
+                <div style="background:#050403; color:white; padding:40px; font-family:sans-serif; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                    <h1 style="color:#eb7c52; text-transform:uppercase; font-weight:900; margin-bottom:10px; font-size:24px;">Neural Link Failure</h1>
+                    <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); color:#ff4d4d; max-width:600px; overflow:auto; font-family:monospace; font-size:12px; text-align:left;">
+                        ERROR: ${msg}
+                    </div>
+                    <button onclick="window.location.reload()" style="background:#eb7c52; color:white; border:none; padding:15px 30px; border-radius:12px; cursor:pointer; font-weight:900; margin-top:30px; text-transform:uppercase; letter-spacing:2px; font-size:10px;">Retry Link</button>
+                </div>
+            `;
+            return false;
+        };
+    </script>
+>>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
 <script type="importmap">
 {
   "imports": {
