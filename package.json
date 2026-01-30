@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
   "name": "zodzy-autonomous-crm-suite",
-=======
-  "name": "zodzy-|-autonomous-crm-suite",
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,19 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.5.0",
     "lucide-react": "^0.263.1",
     "@google/generative-ai": "^0.1.3"
-=======
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "recharts": "3.4.1",
-    "lucide-react": "0.469.0",
-    "@google/generative-ai": "^0.21.0"
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
