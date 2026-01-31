@@ -1,14 +1,13 @@
 
 import React, { useMemo, useState } from 'react';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  XAxis, YAxis, CartesianGrid, LabelList,
-  AreaChart, Area, BarChart, Bar
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
+  XAxis, YAxis, CartesianGrid, BarChart, Bar,
 } from 'recharts';
 import { Lead, LeadStatus, SystemAlert } from '../types';
-import {
-  RefreshCw, TrendingUp, Target,
-  Activity, Crown, Cpu, Zap, Star, AlertCircle, Clock, Filter, ChevronDown, UserCheck
+import { 
+  RefreshCw, TrendingUp, Target, 
+  Activity, Crown, Filter, ChevronDown, UserCheck, AlertCircle, Clock
 } from 'lucide-react';
 import { EMPLOYEE_USERS } from '../constants';
 
@@ -29,22 +28,21 @@ const STATUS_COLORS = {
   [LeadStatus.FOLLOW_UP]: '#fbbf24',
   [LeadStatus.DECLINED]: '#a855f7',
   [LeadStatus.BUSY]: '#6366f1',
-  DEFAULT: '#3f3f46'
+  DEFAULT: '#e4e4e7'
 };
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  allLeads,
-  onRefresh,
-  isLoading,
-  alerts
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
+  allLeads, 
+  onRefresh, 
+  isLoading, 
 }) => {
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>('ALL');
 
   const stats = useMemo(() => {
     const today = new Date();
-    const dayOfWeek = today.getDay();
+    const dayOfWeek = today.getDay(); 
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
+    
     const monday = new Date(today);
     monday.setDate(today.getDate() + diffToMonday);
     monday.setHours(0, 0, 0, 0);
@@ -56,10 +54,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
 
     const specialistPool = EMPLOYEE_USERS.filter(u => u.username !== 'Karthik');
-
-    // Apply Specialist Filter
-    const filteredLeads = selectedSpecialist === 'ALL'
-      ? allLeads
+    const filteredLeads = selectedSpecialist === 'ALL' 
+      ? allLeads 
       : allLeads.filter(l => String(l.employeeOwner || '').toLowerCase() === selectedSpecialist.toLowerCase());
 
     const calculateStats = (leads: Lead[]) => {
@@ -86,7 +82,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         declined,
         followup,
         busy,
-        total
+        total,
       };
     });
 
@@ -108,9 +104,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       };
     };
 
-    return {
-      global,
-      weeklyTrend,
+    return { 
+      global, 
+      weeklyTrend, 
       specialistPool,
       specialistData: specialistPool.map(u => ({
         username: u.username,
@@ -129,32 +125,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-zinc-900 tracking-tighter uppercase leading-none">Command Center</h2>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                {selectedSpecialist === 'ALL' ? 'Current Week (Mon - Sun)' : `Isolated Intelligence: ${selectedSpecialist}`}
-              </p>
+               <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+               <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                 {selectedSpecialist === 'ALL' ? 'Current Week (Mon - Sun)' : `Isolated Intelligence: ${selectedSpecialist}`}
+               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="relative group">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#eb7c52]" />
-            <select
-              className="bg-white border border-zinc-200 rounded-xl py-3.5 pl-10 pr-10 text-[10px] font-black text-zinc-900 uppercase tracking-widest focus:outline-none focus:border-[#eb7c52] transition-all appearance-none cursor-pointer hover:border-zinc-300"
-              value={selectedSpecialist}
-              onChange={(e) => setSelectedSpecialist(e.target.value)}
-            >
-              <option value="ALL">All Units</option>
-              {stats.specialistPool.map(user => (
-                <option key={user.username} value={user.username}>{user.username}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-400 pointer-events-none" />
+             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#eb7c52]" />
+             <select 
+               className="bg-white border border-zinc-200 rounded-xl py-4 pl-12 pr-12 text-[11px] font-black text-zinc-900 uppercase tracking-widest focus:outline-none focus:border-[#eb7c52] focus:ring-4 focus:ring-[#eb7c52]/5 transition-all appearance-none cursor-pointer min-w-[200px] shadow-sm"
+               value={selectedSpecialist}
+               onChange={(e) => setSelectedSpecialist(e.target.value)}
+             >
+               <option value="ALL">All Units</option>
+               {stats.specialistPool.map(user => (
+                 <option key={user.username} value={user.username}>{user.username}</option>
+               ))}
+             </select>
+             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300 pointer-events-none" />
           </div>
 
-          <button
-            onClick={onRefresh}
+          <button 
+            onClick={onRefresh} 
             disabled={isLoading}
             className="bg-zinc-900 hover:bg-black p-4 rounded-xl text-white transition-all shadow-xl active:scale-90"
           >
@@ -178,9 +174,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Status distribution per day (Mon - Sun)</p>
             </div>
             <div className="flex gap-4">
-              <LegendItem color={STATUS_COLORS[LeadStatus.BOOKED]} label="Booked" />
-              <LegendItem color={STATUS_COLORS[LeadStatus.FOLLOW_UP]} label="Follow" />
-              <LegendItem color={STATUS_COLORS[LeadStatus.DECLINED]} label="Declined" />
+               <LegendItem color={STATUS_COLORS[LeadStatus.BOOKED]} label="Booked" />
+               <LegendItem color={STATUS_COLORS[LeadStatus.FOLLOW_UP]} label="Follow" />
+               <LegendItem color={STATUS_COLORS[LeadStatus.DECLINED]} label="Declined" />
             </div>
           </div>
           <div className="h-[400px] w-full">
@@ -189,7 +185,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: '900' }} />
                 <YAxis hide />
-                <Tooltip
+                <Tooltip 
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                   contentStyle={{ background: '#fff', border: '1px solid #f4f4f5', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
                   labelStyle={{ fontWeight: 'black', marginBottom: '8px', textTransform: 'uppercase', color: '#18181b' }}
@@ -200,10 +196,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="bg-white p-5 rounded-2xl border border-zinc-100 shadow-2xl">
                           <p className="text-[11px] font-black text-zinc-900 uppercase tracking-widest mb-3">{label} - {data.total} Units</p>
                           <div className="space-y-2">
-                            <TooltipRow color={STATUS_COLORS[LeadStatus.BOOKED]} label="Booked" value={data.booked} />
-                            <TooltipRow color={STATUS_COLORS[LeadStatus.FOLLOW_UP]} label="Follow Up" value={data.followup} />
-                            <TooltipRow color={STATUS_COLORS[LeadStatus.DECLINED]} label="Declined" value={data.declined} />
-                            <TooltipRow color={STATUS_COLORS[LeadStatus.BUSY]} label="Busy" value={data.busy} />
+                             <TooltipRow color={STATUS_COLORS[LeadStatus.BOOKED]} label="Booked" value={data.booked} />
+                             <TooltipRow color={STATUS_COLORS[LeadStatus.FOLLOW_UP]} label="Follow Up" value={data.followup} />
+                             <TooltipRow color={STATUS_COLORS[LeadStatus.DECLINED]} label="Declined" value={data.declined} />
+                             <TooltipRow color={STATUS_COLORS[LeadStatus.BUSY]} label="Busy" value={data.busy} />
                           </div>
                         </div>
                       );
@@ -222,10 +218,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="flex flex-col gap-6 max-h-[600px] overflow-y-auto custom-scrollbar">
           {stats.specialistData.map(specialist => (
-            <EnhancedSpecialistCard
+            <EnhancedSpecialistCard 
               key={specialist.username}
-              username={specialist.username}
-              stats={specialist.stats}
+              username={specialist.username} 
+              stats={specialist.stats} 
               color={STATUS_COLORS[LeadStatus.BOOKED]}
             />
           ))}
@@ -235,6 +231,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   );
 };
 
+// Fixed TypeScript error: EnhancedSpecialistCard props type by using React.FC which includes React-specific props like key
 const EnhancedSpecialistCard: React.FC<{ username: string; stats: any; color: string }> = ({ username, stats, color }) => {
   return (
     <div className="bg-zinc-50 border border-zinc-100 p-8 rounded-[2.5rem] shadow-sm flex flex-col flex-1 shrink-0">
@@ -299,18 +296,18 @@ const EnhancedSpecialistCard: React.FC<{ username: string; stats: any; color: st
 
 const TooltipRow = ({ color, label, value }: any) => (
   <div className="flex items-center justify-between gap-8 min-w-[140px]">
-    <div className="flex items-center gap-2">
-      <div className="w-2 h-2 rounded-full" style={{ background: color }}></div>
-      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
-    </div>
-    <span className="text-[11px] font-black text-zinc-900">{value}</span>
+     <div className="flex items-center gap-2">
+       <div className="w-2 h-2 rounded-full" style={{ background: color }}></div>
+       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
+     </div>
+     <span className="text-[11px] font-black text-zinc-900">{value}</span>
   </div>
 );
 
 const MiniStat = ({ label, value, color }: any) => (
   <div className="text-left">
-    <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
-    <p className="text-lg font-black text-zinc-900 tracking-tighter" style={color ? { color } : {}}>{value}</p>
+     <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
+     <p className="text-lg font-black text-zinc-900 tracking-tighter" style={color ? { color } : {}}>{value}</p>
   </div>
 );
 
@@ -323,11 +320,11 @@ const LegendItem = ({ color, label }: any) => (
 
 const StatusMetric = ({ label, value, color, icon }: any) => (
   <div className="bg-zinc-50 border border-zinc-100 p-8 rounded-[2.5rem] flex flex-col items-center text-center hover:bg-zinc-100/50 transition-all shadow-sm">
-    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-sm" style={{ backgroundColor: `${color}10`, color: color }}>
-      {React.cloneElement(icon, { size: 24 })}
-    </div>
-    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2">{label}</p>
-    <p className="text-4xl font-black tracking-tighter text-zinc-900">{value}</p>
+     <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-sm" style={{ backgroundColor: `${color}10`, color: color }}>
+       {React.cloneElement(icon, { size: 24 })}
+     </div>
+     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2">{label}</p>
+     <p className="text-4xl font-black tracking-tighter text-zinc-900">{value}</p>
   </div>
 );
 

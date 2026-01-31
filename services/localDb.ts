@@ -47,6 +47,47 @@ class NeuralDB {
     window.location.reload();
   }
 
+  public seedMockData() {
+    const mockSpecialists = ['Kavin', 'Bhuvanesh', 'Logesh'];
+    const mockCompanies = ['Cyberdyne Systems', 'Stark Industries', 'Wayne Enterprises', 'Oscorp Corp', 'Umbrella Corp'];
+    const statuses = [LeadStatus.BOOKED, LeadStatus.DECLINED, LeadStatus.FOLLOW_UP, LeadStatus.BUSY];
+
+    const mockAnalytics: Lead[] = Array.from({ length: 10 }).map((_, i) => ({
+      id: `mock-ana-${i}`,
+      Sno: i + 1,
+      Company: mockCompanies[i % mockCompanies.length],
+      Ratings: (Math.random() * 2 + 3).toFixed(1),
+      Number: `+91 ${9000000000 + i}`,
+      Website: 'https://example.com',
+      Type: 'Technology',
+      Availability: statuses[i % 2], // Booked or Declined
+      employeeOwner: mockSpecialists[i % mockSpecialists.length],
+      Summary: `Strategic alignment confirmed. Entity demonstrates high intent for Q3 deployment. [Generated Mock Data]`,
+      Check: true,
+      lastUpdated: new Date(Date.now() - Math.random() * 100000000).toISOString()
+    }));
+
+    const mockTasks: Lead[] = Array.from({ length: 5 }).map((_, i) => ({
+      id: `mock-task-${i}`,
+      Sno: i + 10,
+      Company: `${mockCompanies[i % mockCompanies.length]} (Region ${i})`,
+      Ratings: (Math.random() * 2 + 2).toFixed(1),
+      Number: `+91 ${8000000000 + i}`,
+      Website: 'https://example.com',
+      Type: 'Manufacturing',
+      Availability: statuses[2 + (i % 2)], // Follow-up or Busy
+      employeeOwner: mockSpecialists[i % mockSpecialists.length],
+      Summary: `Re-engagement required. Specialist noted budget cycle constraints. [Generated Mock Data]`,
+      Check: false,
+      lastUpdated: new Date(Date.now() - Math.random() * 50000000).toISOString()
+    }));
+
+    this.data.analytics = [...mockAnalytics];
+    this.data.tasks = [...mockTasks];
+    this.save();
+    window.location.reload();
+  }
+
   public getPool(username: string): Lead[] {
     return this.data.pool[username] || [];
   }

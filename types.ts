@@ -42,44 +42,9 @@ export interface SystemAlert {
   timeDiff: number;
   timestamp: string;
   isAcknowledged: boolean;
-  rating?: string | number;
-  website?: string;
-  summary?: string;
-}
-
-export interface IntelligenceMetrics {
-  total: number;
-  processed: number;
-  booked: number;
-  declined: number;
-  followUp: number;
-  busy: number;
-  conversionRate: number;
-  dropRate: number;
-  followUpLoad: number;
-  efficiency: number;
-}
-
-export type AppView = 'DASHBOARD' | 'ANALYTICS' | 'TASK_LIST' | 'ALERTS' | 'DATABASE';
-
-export interface ActivityLog {
-  id: string;
-  timestamp: string;
-  action: string;
-  details: string;
-  username: string;
-}
-
-export interface EmployeeStats {
-  username: string;
-  efficiency: number;
-  booked: number;
-  weeklyGoalDelta: number;
-  todayRemainder: number;
-  completedToday: number;
-  processed: number;
-  weeklyProgress: number;
-  weeklyTarget: number;
+  rating: string | number;
+  website: string;
+  summary: string;
 }
 
 export interface TaskAssignment {
@@ -93,3 +58,13 @@ export interface TaskAssignment {
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
   createdAt: string;
 }
+
+export interface ActivityLog {
+  id: string;
+  timestamp: string;
+  username: string;
+  action: string;
+  details: string;
+}
+
+export type AppView = 'DASHBOARD' | 'ANALYTICS' | 'TASK_LIST' | 'ALERTS' | 'DATABASE';

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Lead, LeadStatus } from '../types';
-import {
+import { 
   ChevronLeft, ChevronRight,
   Check, Star,
   SearchCode,
@@ -22,9 +22,9 @@ interface EmployeeDashboardProps {
 type LinkFilter = 'ALL' | 'WITH_LINK' | 'WITHOUT_LINK';
 type RatingSort = 'DEFAULT' | 'HI_TO_LOW' | 'LOW_TO_HI';
 
-const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
-  leads,
-  onUpdateStatus,
+const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ 
+  leads, 
+  onUpdateStatus, 
   onUpdateNotes,
   onUpdateField,
   onFinalizeLead,
@@ -35,16 +35,16 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const [ratingSort, setRatingSort] = useState<RatingSort>('DEFAULT');
   const [showFilters, setShowFilters] = useState(true);
   const [submittingIds, setSubmittingIds] = useState<Set<string>>(new Set());
-
+  
   const itemsPerPage = 25;
 
   const filteredAndSortedLeads = useMemo(() => {
     let result = [...leads].filter(lead => {
       const term = searchTerm.toLowerCase().trim();
       const searchPool = [lead.Company, lead.Number, lead.Type, lead.Website, lead.Sno, lead.Summary, lead.Instagram, lead.Gmail, lead.Location].join(' ').toLowerCase();
-
+      
       const matchesSearch = !term || searchPool.includes(term);
-
+      
       const hasLink = lead.Website && lead.Website !== 'NONE';
       const matchesLink = linkFilter === 'ALL' || (linkFilter === 'WITH_LINK' ? hasLink : !hasLink);
 
@@ -96,19 +96,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <span>{filteredAndSortedLeads.length} Operational Units Ready</span>
             </div>
           </div>
-
+          
           <div className="flex items-center gap-4 w-full xl:w-auto">
             <div className="relative group flex-1 md:w-[400px]">
               <SearchCode className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${searchTerm ? 'text-[#eb7c52]' : 'text-zinc-300'}`} />
-              <input
-                type="text"
-                placeholder="SEARCH ARCHIVE..."
+              <input 
+                type="text" 
+                placeholder="SEARCH ARCHIVE..." 
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-4 pl-14 pr-12 text-[12px] font-black text-zinc-900 focus:outline-none focus:border-[#eb7c52] transition-all placeholder:text-zinc-400"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <button
+            <button 
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-3 px-8 py-4 rounded-xl bg-zinc-900 text-white border-transparent transition-all text-[11px] font-black uppercase tracking-widest hover:bg-black active:scale-95 shrink-0 shadow-xl"
             >
@@ -181,12 +181,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </tr>
             ) : (
               paginatedLeads.map((lead, idx) => (
-                <LeadRow
-                  key={lead.id}
+                <LeadRow 
+                  key={lead.id} 
                   index={(currentPage - 1) * itemsPerPage + idx + 1}
-                  lead={lead}
-                  onUpdateStatus={onUpdateStatus}
-                  onUpdateNotes={onUpdateNotes}
+                  lead={lead} 
+                  onUpdateStatus={onUpdateStatus} 
+                  onUpdateNotes={onUpdateNotes} 
                   onUpdateField={onUpdateField}
                   onFinalizeLead={handleFinalize}
                   isSubmitting={submittingIds.has(lead.id)}
@@ -197,30 +197,30 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </tbody>
         </table>
       </div>
-
+      
       <div className="px-10 py-6 border-t border-zinc-100 flex items-center justify-between bg-zinc-50 shrink-0">
-        <div className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em]">
-          {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedLeads.length)} OF {filteredAndSortedLeads.length} UNITS
-        </div>
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm"
-          >
-            <ChevronLeft size={18} className="text-zinc-600" />
-          </button>
-          <div className="flex items-center">
-            <span className="w-9 h-9 rounded-lg bg-[#eb7c52] text-white flex items-center justify-center font-black text-xs shadow-lg">{currentPage}</span>
-          </div>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm"
-          >
-            <ChevronRight size={18} className="text-zinc-600" />
-          </button>
-        </div>
+         <div className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em]">
+           {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredAndSortedLeads.length)} OF {filteredAndSortedLeads.length} UNITS
+         </div>
+         <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+              disabled={currentPage === 1} 
+              className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm"
+            >
+              <ChevronLeft size={18} className="text-zinc-600" />
+            </button>
+            <div className="flex items-center">
+              <span className="w-9 h-9 rounded-lg bg-[#eb7c52] text-white flex items-center justify-center font-black text-xs shadow-lg">{currentPage}</span>
+            </div>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+              disabled={currentPage >= totalPages} 
+              className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm"
+            >
+              <ChevronRight size={18} className="text-zinc-600" />
+            </button>
+         </div>
       </div>
     </div>
   );
@@ -261,7 +261,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
       <td className="px-6 py-4">
         <div className="relative">
           <InstaIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-300" />
-          <input
+          <input 
             type="text"
             placeholder="IG ID"
             className="w-full bg-zinc-50 border border-zinc-100 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-900 font-bold focus:outline-none focus:border-[#eb7c52]/30 transition-all"
@@ -273,7 +273,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
       <td className="px-6 py-4">
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-300" />
-          <input
+          <input 
             type="email"
             placeholder="GMAIL"
             className="w-full bg-zinc-50 border border-zinc-100 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-900 font-bold focus:outline-none focus:border-[#eb7c52]/30 transition-all"
@@ -285,7 +285,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
       <td className="px-6 py-4">
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-300" />
-          <input
+          <input 
             type="text"
             placeholder="AREA"
             className="w-full bg-zinc-50 border border-zinc-100 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-900 font-bold focus:outline-none focus:border-[#eb7c52]/30 transition-all"
@@ -295,7 +295,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
         </div>
       </td>
       <td className="px-6 py-4">
-        <select
+        <select 
           className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg py-2.5 px-3 text-[11px] font-black uppercase tracking-widest transition-all outline-none cursor-pointer focus:border-[#eb7c52]/30 ${lead.Availability === LeadStatus.UNASSIGNED ? 'text-zinc-400' : 'text-zinc-900 border-[#eb7c52]/30'}`}
           value={lead.Availability}
           onChange={e => onUpdateStatus(lead.id, e.target.value as LeadStatus)}
@@ -309,7 +309,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
       </td>
       <td className="px-6 py-4 relative group/intel">
         <div className="relative">
-          <textarea
+          <textarea 
             placeholder="TYPE.."
             className="w-full bg-zinc-50 border border-zinc-100 rounded-lg pl-3 pr-10 py-2.5 text-[11px] text-zinc-900 placeholder:text-zinc-300 min-h-[44px] resize-none focus:outline-none focus:bg-white focus:border-[#eb7c52]/30 transition-all font-medium leading-relaxed"
             value={lead.Summary || ''}
@@ -321,7 +321,7 @@ const LeadRow = ({ index, lead, onUpdateStatus, onUpdateNotes, onUpdateField, on
         </div>
       </td>
       <td className="px-6 py-4 text-center">
-        <button
+        <button 
           onClick={() => onFinalizeLead(lead.id)}
           disabled={!isActioned || !hasSummary || isSubmitting}
           className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center border transition-all duration-400 ${isActioned && hasSummary && !isSubmitting ? 'bg-[#eb7c52] text-white border-transparent shadow-lg hover:scale-110 active:scale-95' : 'bg-zinc-50 text-zinc-100 border-zinc-100 cursor-not-allowed opacity-40'}`}

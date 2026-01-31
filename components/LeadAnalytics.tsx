@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Lead, LeadStatus } from '../types';
-import {
+import { 
   RefreshCw, Filter, Search,
   Star, Globe, ChevronLeft, ChevronRight, Zap, Instagram, Navigation, Database, Clock, Mail, MapPin, Shield,
   FileSpreadsheet, Download
@@ -57,7 +57,7 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
 
     // Standard CSV headers
     const headers = ["S.No", "Company", "Rating", "Phone", "Instagram", "Gmail", "Location", "Status", "Summary", "Specialist", "Timestamp"];
-
+    
     // Map leads to CSV rows, handling quotes for fields that might contain commas
     const rows = leads.map((l, i) => [
       i + 1,
@@ -89,30 +89,30 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
     <div className="h-full flex flex-col bg-white overflow-hidden animate-in fade-in duration-500">
       <div className="px-10 pt-10 pb-6 flex flex-col xl:flex-row items-end justify-between gap-6 shrink-0 border-b border-zinc-100">
         <div className="space-y-1">
-          <h2 className="text-5xl font-black text-zinc-900 tracking-tighter uppercase leading-none">
-            {isAdmin ? "Master DB" : (title || "Analytics")}
-          </h2>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-2">
-            {isAdmin ? <Shield className="w-4 h-4 text-emerald-500" /> : <Database className="w-4 h-4 text-[#eb7c52]" />}
-            <span>{isAdmin ? "Consolidated Global Operations Data" : "Personal Operational Intelligence"}</span>
-          </div>
+           <h2 className="text-5xl font-black text-zinc-900 tracking-tighter uppercase leading-none">
+             {isAdmin ? "Master DB" : (title || "Analytics")}
+           </h2>
+           <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-2">
+              {isAdmin ? <Shield className="w-4 h-4 text-emerald-500" /> : <Database className="w-4 h-4 text-[#eb7c52]" />}
+              <span>{isAdmin ? "Consolidated Global Operations Data" : "Personal Operational Intelligence"}</span>
+           </div>
         </div>
-
+        
         <div className="flex items-center gap-4 w-full xl:w-auto">
           <div className="relative group flex-1 md:w-[300px]">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300" />
-            <input
-              type="text"
+            <input 
+              type="text" 
               placeholder={isAdmin ? "SEARCH DATABASE..." : "SEARCH ANALYTICS..."}
               className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-4 pl-14 pr-12 text-[12px] font-black text-zinc-900 focus:outline-none focus:border-[#eb7c52] transition-all placeholder:text-zinc-400"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
+          
           <div className="flex items-center gap-3">
             {isAdmin && (
-              <button
+              <button 
                 onClick={handleExportCSV}
                 className="bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 p-4 rounded-xl transition-all shadow-lg active:scale-90 flex items-center gap-3 px-6"
               >
@@ -121,8 +121,8 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
               </button>
             )}
 
-            <button
-              onClick={onRefresh}
+            <button 
+              onClick={onRefresh} 
               disabled={isLoading}
               className="bg-zinc-900 hover:bg-black p-4 rounded-xl transition-all shadow-xl active:scale-90 flex items-center gap-3 px-6"
             >
@@ -149,7 +149,7 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
               ))}
             </div>
           </div>
-
+          
           <div className="flex items-center gap-4">
             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Rating Sort:</span>
             <div className="flex gap-1.5 p-1 bg-white border border-zinc-200 rounded-xl">
@@ -204,15 +204,15 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
                     <td className="px-6 py-4 text-center font-mono text-[11px] text-zinc-500 group-hover:text-zinc-900 transition-colors">{lead.Number}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1 items-center">
-                        {lead.Instagram && <div className="flex items-center gap-1.5"><Instagram size={10} className="text-pink-500" /><span className="text-[9px] font-bold text-zinc-600">@{lead.Instagram}</span></div>}
-                        {lead.Gmail && <div className="flex items-center gap-1.5"><Mail size={10} className="text-blue-500" /><span className="text-[9px] font-bold text-zinc-600 truncate max-w-[80px]">{lead.Gmail}</span></div>}
+                         {lead.Instagram && <div className="flex items-center gap-1.5"><Instagram size={10} className="text-pink-500" /><span className="text-[9px] font-bold text-zinc-600">@{lead.Instagram}</span></div>}
+                         {lead.Gmail && <div className="flex items-center gap-1.5"><Mail size={10} className="text-blue-500" /><span className="text-[9px] font-bold text-zinc-600 truncate max-w-[80px]">{lead.Gmail}</span></div>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <MapPin size={10} className="text-rose-500" />
-                        <span className="text-[9px] font-bold text-zinc-600 truncate max-w-[80px]">{lead.Location || '---'}</span>
-                      </div>
+                       <div className="flex items-center justify-center gap-1.5">
+                          <MapPin size={10} className="text-rose-500" />
+                          <span className="text-[9px] font-bold text-zinc-600 truncate max-w-[80px]">{lead.Location || '---'}</span>
+                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border ${lead.Availability === LeadStatus.BOOKED ? 'text-emerald-600 border-emerald-100 bg-emerald-50' : 'text-zinc-500 border-zinc-100 bg-zinc-50'}`}>
@@ -225,11 +225,11 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex flex-col">
-                        <p className="text-[11px] font-black text-zinc-900 tabular-nums">
-                          {dateObj && !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString([], { day: '2-digit', month: 'short' }) : '---'}
-                        </p>
-                      </div>
+                       <div className="flex flex-col">
+                          <p className="text-[11px] font-black text-zinc-900 tabular-nums">
+                            {dateObj && !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString([], { day: '2-digit', month: 'short' }) : '---'}
+                          </p>
+                       </div>
                     </td>
                   </tr>
                 );
@@ -238,22 +238,22 @@ const LeadAnalytics: React.FC<LeadAnalyticsProps> = ({ leads, isLoading, onRefre
           </tbody>
         </table>
       </div>
-
+      
       <div className="px-10 py-6 border-t border-zinc-100 flex items-center justify-between bg-zinc-50 shrink-0">
-        <div className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em]">
-          TOTAL MASTER ENTRIES: {filteredAndSorted.length} UNITS
-        </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm">
-            <ChevronLeft size={18} className="text-zinc-600" />
-          </button>
-          <div className="flex items-center">
-            <span className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-black text-xs shadow-lg">{currentPage}</span>
-          </div>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm">
-            <ChevronRight size={18} className="text-zinc-600" />
-          </button>
-        </div>
+         <div className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em]">
+           TOTAL MASTER ENTRIES: {filteredAndSorted.length} UNITS
+         </div>
+         <div className="flex items-center gap-6">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm">
+              <ChevronLeft size={18} className="text-zinc-600" />
+            </button>
+            <div className="flex items-center">
+              <span className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-black text-xs shadow-lg">{currentPage}</span>
+            </div>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="p-2.5 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all disabled:opacity-20 bg-white shadow-sm">
+              <ChevronRight size={18} className="text-zinc-600" />
+            </button>
+         </div>
       </div>
     </div>
   );
