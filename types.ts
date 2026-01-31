@@ -9,10 +9,6 @@ export enum LeadStatus {
 
 export interface Lead {
   id: string;
-<<<<<<< HEAD
-=======
-  // Sno is the serial number from the data source, used for display and tracking
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
   Sno?: string | number;
   Company: string;
   Ratings: string | number;
@@ -20,7 +16,6 @@ export interface Lead {
   Website: string;
   Type: string;
   Availability: LeadStatus;
-<<<<<<< HEAD
   Instagram?: string;
   Gmail?: string;
   Location?: string;
@@ -29,13 +24,6 @@ export interface Lead {
   employeeOwner: string;
   lastUpdated: string;
   DateTime?: string;
-=======
-  Summary: string;
-  Check: string; // 'TRUE' or 'FALSE'
-  employeeOwner: string;
-  lastUpdated: string;
-  DateTime?: string; // Appended during lock
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
 }
 
 export interface User {
@@ -51,23 +39,14 @@ export interface SystemAlert {
   phone: string;
   status: string;
   username: string;
-<<<<<<< HEAD
   timeDiff: number;
   timestamp: string;
   isAcknowledged: boolean;
-=======
-  timeDiff: number; // in seconds
-  timestamp: string;
-  isAcknowledged: boolean;
-  // Fields for detailed view requested
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
-  rating: string | number;
-  website: string;
-  summary: string;
+  rating?: string | number;
+  website?: string;
+  summary?: string;
 }
 
-<<<<<<< HEAD
-=======
 export interface IntelligenceMetrics {
   total: number;
   processed: number;
@@ -81,7 +60,7 @@ export interface IntelligenceMetrics {
   efficiency: number;
 }
 
-export type AppView = 'DASHBOARD' | 'ANALYTICS' | 'TASK_LIST' | 'ALERTS';
+export type AppView = 'DASHBOARD' | 'ANALYTICS' | 'TASK_LIST' | 'ALERTS' | 'DATABASE';
 
 export interface ActivityLog {
   id: string;
@@ -103,7 +82,6 @@ export interface EmployeeStats {
   weeklyTarget: number;
 }
 
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
 export interface TaskAssignment {
   id: string;
   employeeUsername: string;
@@ -115,16 +93,3 @@ export interface TaskAssignment {
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
   createdAt: string;
 }
-<<<<<<< HEAD
-
-export interface ActivityLog {
-  id: string;
-  timestamp: string;
-  username: string;
-  action: string;
-  details: string;
-}
-
-export type AppView = 'DASHBOARD' | 'ANALYTICS' | 'TASK_LIST' | 'ALERTS' | 'DATABASE';
-=======
->>>>>>> 6c51c09624cc1a13d393f6fc3645ca050fe88c1c
