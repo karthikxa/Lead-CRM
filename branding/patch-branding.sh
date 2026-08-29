@@ -16,21 +16,40 @@ const FRONT_DIR = '/app/packages/twenty-server/dist/front';
 // Sleek Zed SVG Logo (Black rounded square with clean white 'Z')
 const ZED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%"><rect width="24" height="24" rx="5" fill="#121212"/><path d="M6 7h12v2.5L9.8 15H18v2.5H6v-2.5L14.2 9.5H6V7z" fill="#ffffff"/></svg>`;
 
-const logoSvgPaths = [
+const ZED_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23121212'/%3E%3Cpath d='M6 7h12v2.5L9.8 15H18v2.5H6v-2.5L14.2 9.5H6V7z' fill='%23ffffff'/%3E%3C/svg%3E";
+
+// 1. Overwrite all image & favicon files
+const iconFiles = [
     path.join(FRONT_DIR, 'images/integrations/twenty-logo.svg'),
     path.join(FRONT_DIR, 'images/icons/twenty.svg'),
     path.join(FRONT_DIR, 'favicon.svg'),
-    path.join(FRONT_DIR, 'favicon.ico')
+    path.join(FRONT_DIR, 'favicon.ico'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-48-48.png'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-72-72.png'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-96-96.png'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-144-144.png'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-192-192.png'),
+    path.join(FRONT_DIR, 'images/icons/android/android-launchericon-512-512.png'),
+    path.join(FRONT_DIR, 'images/icons/ios/192.png')
 ];
 
-for (const p of logoSvgPaths) {
+for (const p of iconFiles) {
     try {
         fs.mkdirSync(path.dirname(p), { recursive: true });
         fs.writeFileSync(p, ZED_SVG, 'utf8');
     } catch(e) {}
 }
 
-// Helper to scan all files in FRONT_DIR
+// 2. Patch index.html specifically for tab favicon and title
+const indexHtmlPath = path.join(FRONT_DIR, 'index.html');
+if (fs.existsSync(indexHtmlPath)) {
+    let html = fs.readFileSync(indexHtmlPath, 'utf8');
+    html = html.replace(/<link rel="icon"[^>]*>/gi, `<link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">`);
+    html = html.replace(/<link rel="apple-touch-icon"[^>]*>/gi, `<link rel="apple-touch-icon" href="${ZED_DATA_URI}">`);
+    fs.writeFileSync(indexHtmlPath, html, 'utf8');
+}
+
+// 3. Scan and patch all text/JS/HTML/JSON/CSS files
 function walk(dir) {
     let results = [];
     const list = fs.readdirSync(dir);
@@ -86,6 +105,6 @@ for (const filePath of allFiles) {
     }
 }
 
-console.log(`[Zed] Rebranded ${patchedCount} frontend files to Zed CRM successfully!`);
+console.log(`[Zed] Rebranded ${patchedCount} frontend files with tab favicon and Zed CRM branding!`);
 EOF
 fi
