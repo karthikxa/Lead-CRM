@@ -1,0 +1,13 @@
+# Secrets - keep .env private for production; Daytona will inject via dashboard
+.env
+
+# Volumes
+db-data/
+server-local-data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

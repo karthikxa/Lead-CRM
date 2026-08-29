@@ -1,0 +1,18 @@
+{
+  "name": "Zed CRM",
+  "image": "docker:24-dind",
+  "ports": [3000],
+  "postCreateCommands": [
+    "docker --version && docker compose version",
+    "cp -n .env.example .env || true",
+    "docker compose pull",
+    "docker compose up -d",
+    "echo 'Waiting for Zed to be healthy...'; until curl -s http://localhost:3000/healthz | grep -q ok; do sleep 2; done; echo 'Zed ready at http://localhost:3000 - set SERVER_URL to your Daytona preview URL for Gmail SSO'"
+  ],
+  "forwardPorts": [3000],
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.vscode-json"]
+    }
+  }
+}
