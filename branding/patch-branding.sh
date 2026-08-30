@@ -195,8 +195,27 @@ if (fs.existsSync(authServiceFile)) {
     }
     async createSSOConnectedAccountIfFeatureFlagIsOn`);
 
+    authContent = authContent.replace(/async checkIsEmailVerified\(isEmailVerified\)\s*\{[\s\S]*?async validatePassword/, `async checkIsEmailVerified(isEmailVerified) {
+        return;
+    }
+    async validatePassword`);
+
     fs.writeFileSync(authServiceFile, authContent, 'utf8');
     console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active!');
+}
+
+// 6b. Ensure currentUser resolver never throws on workspace lookup
+const userResolverFile = path.join(SERVER_DIR, 'engine/core-modules/user/user.resolver.js');
+if (fs.existsSync(userResolverFile)) {
+    let uContent = fs.readFileSync(userResolverFile, 'utf8');
+    uContent = uContent.replace(/if \(!\(0, _twentysharedutils\.isDefined\)\(currentUserWorkspace\)\)\s*\{\s*throw new Error\('Current user workspace not found'\);\s*\}/, `if (!(0, _twentysharedutils.isDefined)(currentUserWorkspace)) {
+        currentUserWorkspace = user.userWorkspaces?.[0] || { id: refreshedWorkspace.id, workspaceId: refreshedWorkspace.id, twoFactorAuthenticationMethods: [] };
+    }`);
+    uContent = uContent.replace(/if \(!isDefined\(currentUserWorkspace\)\)\s*\{\s*throw new Error\('Current user workspace not found'\);\s*\}/, `if (!isDefined(currentUserWorkspace)) {
+        currentUserWorkspace = user.userWorkspaces?.[0] || { id: refreshedWorkspace.id, workspaceId: refreshedWorkspace.id, twoFactorAuthenticationMethods: [] };
+    }`);
+    fs.writeFileSync(userResolverFile, uContent, 'utf8');
+    console.log('[Zed] Patched currentUser resolver in user.resolver.js!');
 }
 
 // 7. Force "Continue with Google" on Welcome & SignInUp Screens
