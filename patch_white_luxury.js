@@ -9,10 +9,10 @@ c = c.replace(/message:\s*"Join your team on Zed"/g, 'message: "You\'ve been inv
 c = c.replace(/\(via Twenty\)/g, '(via Zed Agency)');
 c = c.replace(/Twenty CRM/gi, 'Zed Agency CRM');
 
-// Replace the subject line with clean dynamic template
+// Replace the subject line with clean high-deliverability subject
 c = c.replace(
   /const subject = i18n\._\(joinTeamMsg\);/g,
-  'const subject = "⚡ You\'ve been invited to join " + (workspace.displayName || "Zed Agency Workspace") + " · Zed Agency";'
+  'const subject = "Invitation to join " + (workspace.displayName || "Zed Agency Workspace") + " on Zed Agency CRM";'
 );
 
 // Inject 1-to-1 White Luxury HTML template matching user mock
