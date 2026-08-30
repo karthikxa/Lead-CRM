@@ -18,7 +18,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Gmail SMTP transporter (Render open outbound)
+// Gmail SMTP transporter - try 587 STARTTLS
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -26,8 +26,62 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.SMTP_USER || 'zedagencyofficial@gmail.com',
     pass: process.env.SMTP_PASS || 'oeexdvgdgklbyksu'
-  }
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000
 });
+
+// Also create SSL fallback on port 465
+const transporter465 = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL
+  auth: {
+    user: process.env.SMTP_USER || 'zedagencyofficial@gmail.com',
+    pass: process.env.SMTP_PASS || 'oeexdvgdgklbyksu'
+  },
+  connectionTimeout: 15000,
+  socketTimeout: 20000
+});
+
+// Helper: try both ports
+async function sendMailWithFallback(mailOptions) {
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('[SMTP 587] Sent:', info.messageId);
+    return info;
+  } catch (err587) {
+    console.warn('[SMTP 587] Failed:', err587.message, '— trying port 465...');
+    try {
+      const info = await transporter465.sendMail(mailOptions);
+      console.log('[SMTP 465] Sent:', info.messageId);
+      return info;
+    } catch (err465) {
+      throw new Error(`Both ports failed. 587: ${err587.message} | 465: ${err465.message}`);
+    }
+  }
+}
+
+// SMTP diagnostic endpoint
+app.get('/debug/smtp', async (req, res) => {
+  const results = {};
+  try {
+    await transporter.verify();
+    results.port587 = 'OK';
+  } catch (e) {
+    results.port587 = 'FAIL: ' + e.message;
+  }
+  try {
+    await transporter465.verify();
+    results.port465 = 'OK';
+  } catch (e) {
+    results.port465 = 'FAIL: ' + e.message;
+  }
+  results.smtpUser = process.env.SMTP_USER || 'zedagencyofficial@gmail.com';
+  res.json(results);
+});
+
 
 // LLM Gateway Target (FreeLLMAPI backend)
 const LLM_TARGET_HOST = 'server-llm-1-0r64.onrender.com';
@@ -74,7 +128,7 @@ app.post('/send', async (req, res) => {
     return res.status(400).json({ error: 'Missing required: to, subject, and html/text' });
   }
   try {
-    const info = await transporter.sendMail({
+    const info = await sendMailWithFallback({
       from: from || `"Zed Agency" <${process.env.SMTP_USER || 'zedagencyofficial@gmail.com'}>`,
       to,
       subject,
@@ -171,7 +225,7 @@ app.post('/invite', async (req, res) => {
 </html>`;
 
   try {
-    const info = await transporter.sendMail({
+    const info = await sendMailWithFallback({
       from: `"Zed Agency CRM" <${process.env.SMTP_USER || 'zedagencyofficial@gmail.com'}>`,
       to: email,
       subject: `You've been invited to join ${ws}`,
