@@ -353,10 +353,10 @@ if (fs.existsSync(googleCtrlFile)) {
     console.log('[Zed] Supported both /redirect and /callback on GoogleAuthController!');
 }
 
-const googleApisCtrlFile = path.join(SERVER_DIR, 'modules/connected-account/oauth2-client/controllers/google-apis.controller.js');
+const googleApisCtrlFile = path.join(SERVER_DIR, 'engine/core-modules/auth/controllers/google-apis-auth.controller.js');
 if (fs.existsSync(googleApisCtrlFile)) {
     let apisContent = fs.readFileSync(googleApisCtrlFile, 'utf8');
-    apisContent = apisContent.replace(/\(0, _common\.Get\)\('redirect'\)/g, "(0, _common.Get)(['redirect', 'callback'])");
+    apisContent = apisContent.replace(/\(0, _common\.Get\)\('get-access-token'\)/g, "(0, _common.Get)(['get-access-token', 'callback', 'redirect'])");
     fs.writeFileSync(googleApisCtrlFile, apisContent, 'utf8');
     console.log('[Zed] Supported both /redirect and /callback on GoogleAPIsAuthController!');
 }
