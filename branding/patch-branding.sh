@@ -399,7 +399,7 @@ if (fs.existsSync(onboardingFile)) {
     console.log('[Zed] Onboarding service patched to always return COMPLETED!');
 }
 
-// 6. Direct Google Auth / Auto-Enrollment
+// 6. Direct Google Auth / Auto-Enrollment & Social SSO Fix
 const ADMIN_EMAILS = [
     'balunithyapriya@gmail.com',
     'bkarthikeyan.cse2025@citchennai.net',
@@ -410,7 +410,7 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    authContent = authContent.replace(/async authenticateGoogleUser\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async authenticateGoogleUser({ userEmail, firstName, lastName, picture, billingCheckoutSessionState, authProvider }) {
+    authContent = authContent.replace(/async signInUpWithSocialSSO\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async signInUpWithSocialSSO({ firstName, lastName, email: userEmail, picture, billingCheckoutSessionState, authProvider }) {
         const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
         let existingUser = await this.userRepository.findOne({
             where: { email: userEmail.toLowerCase() },
@@ -505,7 +505,7 @@ if (fs.existsSync(authServiceFile)) {
     async createSSOConnectedAccountIfFeatureFlagIsOn`);
 
     fs.writeFileSync(authServiceFile, authContent, 'utf8');
-    console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active!');
+    console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSSO!');
 }
 
 // 6b. Ensure currentUser resolver never throws on workspace lookup
