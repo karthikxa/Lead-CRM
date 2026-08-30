@@ -81,48 +81,10 @@ if (fs.existsSync(emailFactoryFile)) {
     console.log('[Zed] Patched EmailDriverFactory for Gmail SSL on port 465!');
 }
 
-// 1c. Direct fail-safe SMTP email sending in email.service.js
-const emailServiceFile = path.join(SERVER_DIR, 'engine/core-modules/email/email.service.js');
-if (fs.existsSync(emailServiceFile)) {
-    let esContent = fs.readFileSync(emailServiceFile, 'utf8');
-    esContent = esContent.replace(
-        /async send\(sendMailOptions\)\s*\{[\s\S]*?constructor/,
-        `async send(sendMailOptions) {
-        const nodemailer = require('nodemailer');
-        try {
-            const host = process.env.EMAIL_SMTP_HOST || 'smtp.gmail.com';
-            const port = Number(process.env.EMAIL_SMTP_PORT) || 465;
-            const user = process.env.EMAIL_SMTP_USER || 'zedagencyofficial@gmail.com';
-            const pass = process.env.EMAIL_SMTP_PASSWORD || 'oeexdvgdgklbyksu';
-            const transporter = nodemailer.createTransport({
-                host,
-                port,
-                secure: port === 465,
-                auth: { user, pass }
-            });
-            const mailOptions = {
-                ...sendMailOptions,
-                from: '"Zed Agency" <zedagencyofficial@gmail.com>',
-                replyTo: 'zedagencyofficial@gmail.com',
-                headers: {
-                    'X-Mailer': 'Zed Agency CRM Mailer',
-                    'X-Priority': '3',
-                    'List-Unsubscribe': '<mailto:zedagencyofficial@gmail.com?subject=unsubscribe>'
-                }
-            };
-            const info = await transporter.sendMail(mailOptions);
-            console.log('[Zed] Direct SMTP email sent successfully to:', sendMailOptions.to, info.messageId);
-        } catch (err) {
-            console.error('[Zed] Direct SMTP email error:', err.message);
-        }
-        try {
-            await this.messageQueueService.add(_emailsenderjob.EmailSenderJob.name, sendMailOptions, { retryLimit: 3 });
-        } catch (e) {}
-    }
-    constructor`
-    );
-    fs.writeFileSync(emailServiceFile, esContent, 'utf8');
-    console.log('[Zed] Patched EmailService with direct fail-safe SMTP sending!');
+// 1c. Deploy Gmail API Email Service (HTTPS 443)
+if (fs.existsSync('/home/daytona/Lead-CRM/email.service.patched.js')) {
+    fs.copyFileSync('/home/daytona/Lead-CRM/email.service.patched.js', path.join(SERVER_DIR, 'engine/core-modules/email/email.service.js'));
+    console.log('[Zed] Deployed Gmail API HTTPS EmailService into server dist!');
 }
 
 // 1d. Rebrand Invitation emails to Zed with Corporate-Level HTML Template
