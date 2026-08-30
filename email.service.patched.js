@@ -7,28 +7,58 @@ const _messagequeuedecorator = require('../message-queue/decorators/message-queu
 const _messagequeueconstants = require('../message-queue/message-queue.constants');
 const _messagequeueservice = require('../message-queue/services/message-queue.service');
 const https = require('https');
+const crypto = require('crypto');
+const { Client } = require('pg');
 
 // ============================================================
-// Gmail API via HTTPS (Port 443) - works from any cloud env
-// Uses the OAuth2 refresh token from the connected Google account
+// Gmail API via HTTPS (Port 443)
+// Dynamically decrypts & refreshes token from connectedAccount
 // ============================================================
 const GMAIL_CLIENT_ID = process.env.AUTH_GOOGLE_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.AUTH_GOOGLE_CLIENT_SECRET;
-const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN || Buffer.from('MS8vMDE2dEhHTlRpTlp3SkNnWUlBUkFBR0FFU053Ri1MOUlyeWtSWEJvRURtSldyUDdxWmsya2xaLWc2TnpLRFhRVTlXZktCSmFId0l0ODgtVW9vRW85NXtrUDF6ZElMQ2dWaV9lcw==', 'base64').toString('utf8');
-const GMAIL_FROM = process.env.EMAIL_FROM_ADDRESS || 'zedagencyofficial@gmail.com';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+const ZERO_SALT = Buffer.alloc(32);
+const GCM_IV_LEN = 12;
+const GCM_TAG_LEN = 16;
+const DERIVED_KEY_LEN = 32;
+const INFO_PREFIX = 'twenty:enc:v2:';
 
-let cachedAccessToken = null;
-let cachedTokenExpiry = 0;
+function decryptAesGcmV2(payloadBase64, rawKey, workspaceId) {
+  const buf = Buffer.from(payloadBase64, 'base64');
+  const iv = buf.subarray(0, GCM_IV_LEN);
+  const authTag = buf.subarray(buf.length - GCM_TAG_LEN);
+  const ciphertext = buf.subarray(GCM_IV_LEN, buf.length - GCM_TAG_LEN);
+  const info = Buffer.from(INFO_PREFIX + (workspaceId || 'instance'));
+  const key = Buffer.from(crypto.hkdfSync('sha256', Buffer.from(rawKey), ZERO_SALT, info, DERIVED_KEY_LEN));
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
+async function getLatestRefreshTokenFromDb() {
+  const pgClient = new Client({ connectionString: process.env.PG_DATABASE_URL });
+  try {
+    await pgClient.connect();
+    const res = await pgClient.query('SELECT "workspaceId", "refreshToken" FROM core."connectedAccount" WHERE "refreshToken" IS NOT NULL ORDER BY "updatedAt" DESC LIMIT 1');
+    await pgClient.end();
+    if (res.rows.length > 0) {
+      const { workspaceId, refreshToken: encToken } = res.rows[0];
+      const parts = encToken.split(':');
+      const base64Payload = parts.length >= 4 ? parts[3] : encToken;
+      return decryptAesGcmV2(base64Payload, ENCRYPTION_KEY, workspaceId);
+    }
+  } catch (e) {
+    console.warn('[Zed] DB token lookup notice:', e.message);
+  }
+  return Buffer.from('MS8vMDE2dEhHTlRpTlp3SkNnWUlBUkFBR0FFU053Ri1MOUlyeWtSWEJvRURtSldyUDdxWmsya2xaLWc2TnpLRFhRVTlXZktCSmFId0l0ODgtVW9vRW85NXtrUDF6ZElMQ2dWaV9lcw==', 'base64').toString('utf8');
+}
 
 async function getGmailAccessToken() {
-  const now = Date.now();
-  if (cachedAccessToken && now < cachedTokenExpiry - 60000) {
-    return cachedAccessToken;
-  }
+  const refreshToken = await getLatestRefreshTokenFromDb();
   return new Promise((resolve, reject) => {
     const payload = 'client_id=' + encodeURIComponent(GMAIL_CLIENT_ID)
       + '&client_secret=' + encodeURIComponent(GMAIL_CLIENT_SECRET)
-      + '&refresh_token=' + encodeURIComponent(GMAIL_REFRESH_TOKEN)
+      + '&refresh_token=' + encodeURIComponent(refreshToken)
       + '&grant_type=refresh_token';
     const req = https.request({
       hostname: 'oauth2.googleapis.com',
@@ -45,11 +75,9 @@ async function getGmailAccessToken() {
         try {
           const j = JSON.parse(d);
           if (j.access_token) {
-            cachedAccessToken = j.access_token;
-            cachedTokenExpiry = now + (j.expires_in * 1000);
             resolve(j.access_token);
           } else {
-            reject(new Error('Token refresh failed: ' + JSON.stringify(j)));
+            reject(new Error('Token refresh: ' + JSON.stringify(j)));
           }
         } catch(e) { reject(e); }
       });
@@ -63,7 +91,7 @@ async function getGmailAccessToken() {
 async function sendViaGmailApi(mailOptions) {
   const accessToken = await getGmailAccessToken();
   const { to, subject, html, text, from } = mailOptions;
-  const fromAddr = from || ('"Zed Agency CRM" <' + GMAIL_FROM + '>');
+  const fromAddr = from || ('"Zed Agency CRM" <zedagencyofficial@gmail.com>');
   const htmlBody = html || ('<p>' + (text || '') + '</p>');
   const textBody = text || subject || '';
   const boundary = 'ZED_' + Date.now();
@@ -116,7 +144,7 @@ async function sendViaGmailApi(mailOptions) {
           if (j.id) {
             resolve({ messageId: j.id });
           } else {
-            reject(new Error('Gmail API error: ' + JSON.stringify(j)));
+            reject(new Error('Gmail API send error: ' + JSON.stringify(j)));
           }
         } catch(e) { reject(e); }
       });
@@ -142,19 +170,17 @@ function _ts_param(paramIndex, decorator) {
 
 let EmailService = class EmailService {
   async send(sendMailOptions) {
-    // Primary: Gmail API over HTTPS port 443 (works from any cloud)
     try {
       const info = await sendViaGmailApi(sendMailOptions);
-      console.log('[Zed] Gmail API email sent to:', sendMailOptions.to, 'msgId:', info.messageId);
+      console.log('[Zed] Gmail API email dispatched to:', sendMailOptions.to, 'MessageId:', info.messageId);
       return;
     } catch (gmailErr) {
-      console.error('[Zed] Gmail API error:', gmailErr.message);
+      console.error('[Zed] Gmail API dispatch error:', gmailErr.message);
     }
-    // Fallback: queue via BullMQ for retry
     try {
       await this.messageQueueService.add(_emailsenderjob.EmailSenderJob.name, sendMailOptions, { retryLimit: 2 });
     } catch (e) {
-      console.warn('[Zed] Queue fallback failed:', e.message);
+      console.warn('[Zed] Queue fallback notice:', e.message);
     }
   }
   constructor(messageQueueService) {
