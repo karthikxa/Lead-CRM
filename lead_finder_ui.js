@@ -18,7 +18,11 @@
     async init() {
       await this.fetchMembers();
       this.injectSidebarItem();
-      setInterval(() => this.injectSidebarItem(), 1000);
+      this.initInviteListener();
+      setInterval(() => {
+        this.injectSidebarItem();
+        this.initInviteListener();
+      }, 1000);
 
       document.addEventListener('click', (e) => {
         if (!this.isOpen) return;
@@ -40,6 +44,82 @@
       });
 
       this.handleRouteChange();
+    },
+
+    initInviteListener() {
+      if (!window.location.pathname.includes('/settings/members') && !window.location.hash.includes('invite')) return;
+
+      const inviteBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === 'Invite');
+      if (inviteBtn && !inviteBtn.dataset.zedBound) {
+        inviteBtn.dataset.zedBound = 'true';
+        inviteBtn.addEventListener('click', async () => {
+          setTimeout(async () => {
+            const inputs = document.querySelectorAll('input[type="text"], input[type="email"]');
+            let targetEmail = '';
+            for (const inp of inputs) {
+              const v = (inp.value || '').trim();
+              if (v.includes('@')) {
+                targetEmail = v;
+                break;
+              }
+            }
+
+            // Get generated invite link
+            let inviteLink = window.location.origin;
+            for (const inp of inputs) {
+              const v = (inp.value || '').trim();
+              if (v.includes('/invite/')) {
+                inviteLink = v;
+                break;
+              }
+            }
+
+            if (targetEmail) {
+              this.showToast(`📧 [Zed Bridge] Sending Gmail invitation to ${targetEmail}...`);
+              try {
+                const res = await fetch('https://zed-email-relay.onrender.com/invite', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: targetEmail,
+                    workspaceName: 'Zed Agency CRM',
+                    inviteLink: inviteLink,
+                    inviterName: 'Zed Agency Admin'
+                  })
+                });
+                const data = await res.json();
+                if (data.success) {
+                  this.showToast(`✅ [Zed Bridge] Invitation delivered to ${targetEmail}!`);
+                } else {
+                  this.showToast(`⚠️ [Zed Bridge] Email notice: ${data.error || 'Check Render server'}`);
+                }
+              } catch (err) {
+                console.warn('[Zed Bridge] Invite dispatch:', err.message);
+              }
+            }
+          }, 600);
+        });
+      }
+    },
+
+    showToast(msg) {
+      let toast = document.getElementById('zed-global-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'zed-global-toast';
+        toast.style.cssText = 'position: fixed; bottom: 24px; right: 24px; background: #18181b; color: #f4f4f5; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 9999999; display: flex; align-items: center; gap: 8px; border: 1px solid #27272a; transition: all 0.3s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+      clearTimeout(window._zedToastTimer);
+      window._zedToastTimer = setTimeout(() => {
+        if (toast) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(10px)';
+        }
+      }, 5000);
     },
 
     handleRouteChange() {
