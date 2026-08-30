@@ -230,23 +230,23 @@ if (fs.existsSync(aiProvidersFile)) {
             aiJson.openai.baseUrl = "https://server-llm-1.onrender.com/v1";
             aiJson.openai.models = [
                 {
-                    name: "gpt-4o",
+                    name: "auto",
                     label: "GPT-4o",
                     modelFamily: "GPT",
-                    inputCostPerMillionTokens: 2.5,
-                    outputCostPerMillionTokens: 10,
-                    contextWindowTokens: 128000,
-                    maxOutputTokens: 16384,
+                    inputCostPerMillionTokens: 0,
+                    outputCostPerMillionTokens: 0,
+                    contextWindowTokens: 1000000,
+                    maxOutputTokens: 32768,
                     modalities: ["image", "pdf"]
                 },
                 {
-                    name: "gpt-4o-mini",
+                    name: "auto",
                     label: "GPT-4o mini",
                     modelFamily: "GPT",
-                    inputCostPerMillionTokens: 0.15,
-                    outputCostPerMillionTokens: 0.6,
-                    contextWindowTokens: 128000,
-                    maxOutputTokens: 16384,
+                    inputCostPerMillionTokens: 0,
+                    outputCostPerMillionTokens: 0,
+                    contextWindowTokens: 1000000,
+                    maxOutputTokens: 32768,
                     modalities: ["image", "pdf"]
                 }
             ];
