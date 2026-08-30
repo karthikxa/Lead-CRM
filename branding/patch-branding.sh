@@ -177,11 +177,32 @@ if (fs.existsSync(authServiceFile)) {
             isEmailVerified: true
         });
 
-        // Ensure user is enrolled in default workspace
+        // Ensure user is enrolled in default workspace & has Admin role
         if (defaultWorkspace) {
             const hasAccess = await this.userService.hasUserAccessToWorkspace(existingUser.id, defaultWorkspace.id);
             if (!hasAccess) {
                 await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(existingUser, defaultWorkspace);
+            }
+            try {
+                const userWorkspace = await this.userWorkspaceRepository.findOneBy({ userId: existingUser.id, workspaceId: defaultWorkspace.id });
+                if (userWorkspace) {
+                    const adminRole = await this.roleRepository.findOneBy({ workspaceId: defaultWorkspace.id, label: 'Admin' });
+                    if (adminRole) {
+                        const existingRoleTarget = await this.roleTargetRepository.findOneBy({ userWorkspaceId: userWorkspace.id });
+                        if (!existingRoleTarget) {
+                            const app = await this.applicationRepository?.findOneBy?.({}) || null;
+                            await this.roleTargetRepository.save({
+                                workspaceId: defaultWorkspace.id,
+                                roleId: adminRole.id,
+                                userWorkspaceId: userWorkspace.id,
+                                applicationId: app ? app.id : '41d1b956-28c2-4d14-9188-b7d401aacef5',
+                                universalIdentifier: require('crypto').randomUUID()
+                            });
+                        }
+                    }
+                }
+            } catch (roleErr) {
+                console.log('[Zed] Role target auto-assignment notice:', roleErr.message);
             }
         }
 
@@ -459,3 +480,39 @@ for (const filePath of allFiles) {
 
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 EOF
+
+# Run database self-healing for user verification and admin role allocation
+cat << 'DBEOF' > /tmp/repair-db.js
+const { Client } = require('pg');
+const crypto = require('crypto');
+
+async function repairDB() {
+  const dbUrl = process.env.PG_DATABASE_URL || 'postgresql://' + (process.env.PG_DATABASE_USER || 'postgres') + ':' + (process.env.PG_DATABASE_PASSWORD || '0d8ff9694687b3817867b2fc95511775') + '@' + (process.env.PG_DATABASE_HOST || 'db') + ':' + (process.env.PG_DATABASE_PORT || '5432') + '/' + (process.env.PG_DATABASE_NAME || 'default');
+  const client = new Client({ connectionString: dbUrl });
+  try {
+    await client.connect();
+    await client.query('UPDATE core."user" SET "isEmailVerified" = true');
+    const adminRoleRes = await client.query("SELECT id, \"workspaceId\" FROM core.role WHERE label = 'Admin' LIMIT 1");
+    const appRes = await client.query('SELECT "applicationId" FROM core."roleTarget" WHERE "applicationId" IS NOT NULL LIMIT 1');
+    const appId = appRes.rows[0]?.applicationId || '41d1b956-28c2-4d14-9188-b7d401aacef5';
+    if (adminRoleRes.rows.length > 0) {
+      const adminRole = adminRoleRes.rows[0];
+      const uws = await client.query('SELECT id, "workspaceId", "userId" FROM core."userWorkspace"');
+      for (const uw of uws.rows) {
+        const rt = await client.query('SELECT id FROM core."roleTarget" WHERE "userWorkspaceId" = $1', [uw.id]);
+        if (rt.rows.length === 0) {
+          await client.query('INSERT INTO core."roleTarget" (id, "workspaceId", "roleId", "userWorkspaceId", "createdAt", "updatedAt", "universalIdentifier", "applicationId") VALUES ($1, $2, $3, $4, NOW(), NOW(), $5, $6)', [crypto.randomUUID(), uw.workspaceId, adminRole.id, uw.id, crypto.randomUUID(), appId]);
+          console.log('[Zed] Auto-assigned Admin role to userWorkspace:', uw.id);
+        }
+      }
+    }
+    await client.end();
+    console.log('[Zed] Database self-healing complete!');
+  } catch (err) {
+    console.log('[Zed] DB self-healing note:', err.message);
+  }
+}
+repairDB();
+DBEOF
+NODE_PATH=/app/node_modules node /tmp/repair-db.js
+rm -f /tmp/repair-db.js
