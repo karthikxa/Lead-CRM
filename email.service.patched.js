@@ -10,10 +10,6 @@ const https = require('https');
 const crypto = require('crypto');
 const { Client } = require('pg');
 
-// ============================================================
-// Gmail API via HTTPS (Port 443)
-// Dynamically decrypts & refreshes token from connectedAccount
-// ============================================================
 const GMAIL_CLIENT_ID = process.env.AUTH_GOOGLE_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.AUTH_GOOGLE_CLIENT_SECRET;
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
@@ -88,37 +84,42 @@ async function getGmailAccessToken() {
   });
 }
 
+// Clean RFC 2822 builder with base64 parts so Gmail renders 100% pixel-perfect HTML
 async function sendViaGmailApi(mailOptions) {
   const accessToken = await getGmailAccessToken();
   const { to, subject, html, text, from } = mailOptions;
-  const fromAddr = from || ('"Zed Agency CRM" <zedagencyofficial@gmail.com>');
+  const fromAddr = from || ('"Zed Agency" <zedagencyofficial@gmail.com>');
+  const cleanSubject = (subject || 'Workspace Invitation').replace(/Twenty/gi, 'Zed');
   const htmlBody = html || ('<p>' + (text || '') + '</p>');
-  const textBody = text || subject || '';
-  const boundary = 'ZED_' + Date.now();
+  const textBody = (text || cleanSubject).replace(/Twenty/gi, 'Zed');
+  const boundary = '===_ZED_MAIL_' + Date.now() + '_===';
 
-  const emailLines = [
-    'MIME-Version: 1.0',
+  const htmlBase64 = Buffer.from(htmlBody, 'utf8').toString('base64');
+  const textBase64 = Buffer.from(textBody, 'utf8').toString('base64');
+
+  const rawMessage = [
     'From: ' + fromAddr,
     'To: ' + to,
-    'Subject: ' + subject,
+    'Subject: =?UTF-8?B?' + Buffer.from(cleanSubject, 'utf8').toString('base64') + '?=',
+    'MIME-Version: 1.0',
     'Content-Type: multipart/alternative; boundary="' + boundary + '"',
     '',
     '--' + boundary,
     'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: quoted-printable',
+    'Content-Transfer-Encoding: base64',
     '',
-    textBody,
+    textBase64,
     '',
     '--' + boundary,
     'Content-Type: text/html; charset=UTF-8',
-    'Content-Transfer-Encoding: quoted-printable',
+    'Content-Transfer-Encoding: base64',
     '',
-    htmlBody,
+    htmlBase64,
     '',
     '--' + boundary + '--'
-  ];
+  ].join('\r\n');
 
-  const raw = Buffer.from(emailLines.join('\r\n'))
+  const raw = Buffer.from(rawMessage)
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -144,7 +145,7 @@ async function sendViaGmailApi(mailOptions) {
           if (j.id) {
             resolve({ messageId: j.id });
           } else {
-            reject(new Error('Gmail API send error: ' + JSON.stringify(j)));
+            reject(new Error('Gmail API send: ' + JSON.stringify(j)));
           }
         } catch(e) { reject(e); }
       });
@@ -172,10 +173,10 @@ let EmailService = class EmailService {
   async send(sendMailOptions) {
     try {
       const info = await sendViaGmailApi(sendMailOptions);
-      console.log('[Zed] Gmail API email dispatched to:', sendMailOptions.to, 'MessageId:', info.messageId);
+      console.log('[Zed] Gmail API email sent to:', sendMailOptions.to, 'msgId:', info.messageId);
       return;
     } catch (gmailErr) {
-      console.error('[Zed] Gmail API dispatch error:', gmailErr.message);
+      console.error('[Zed] Gmail API send error:', gmailErr.message);
     }
     try {
       await this.messageQueueService.add(_emailsenderjob.EmailSenderJob.name, sendMailOptions, { retryLimit: 2 });
@@ -194,5 +195,3 @@ EmailService = _ts_decorate([
   _ts_metadata('design:type', Function),
   _ts_metadata('design:paramtypes', [typeof _messagequeueservice.MessageQueueService === 'undefined' ? Object : _messagequeueservice.MessageQueueService])
 ], EmailService);
-
-//# sourceMappingURL=email.service.js.map
