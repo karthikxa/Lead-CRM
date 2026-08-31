@@ -64,6 +64,29 @@ services:
       retries: 20
     restart: always
 
+  agency-worker:
+    image: twentycrm/twenty:${TAG:-latest}
+    entrypoint: ["node"]
+    working_dir: /app
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+      - ./scripts:/app/scripts:ro
+    command: ["/app/scripts/agency-workflow-worker.js"]
+    environment:
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
+      AGENCY_POLL_MS: "60000"
+      SERVER_URL: ${SERVER_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    restart: always
+
   worker:
     image: twentycrm/twenty:${TAG:-latest}
     volumes:
