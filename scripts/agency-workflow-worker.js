@@ -77,7 +77,7 @@ async function createCalendarEvent(pg, person, opp) {
     const hasTarget = await pg.query(`SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name='calendarEventTarget'`, [schema]);
     if (hasTarget.rowCount) {
       try {
-        await pg.query(`INSERT INTO ${schema}."calendarEventTarget" (id, "createdAt","updatedAt", "calendarEventId", "personId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), evId, person.id]);
+        await pg.query(`INSERT INTO ${schema}."calendarEventTarget" (id, "createdAt","updatedAt", "calendarEventId", "targetPersonId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), evId, person.id]);
       } catch {}
     }
     console.log(`[agency] calendar event ${evId} created for ${person.id} at ${meetingTime}`);
@@ -95,7 +95,7 @@ async function handleNotAttended(pg, schema) {
   const res = await pg.query(`SELECT id, "nameFirstName","nameLastName","emailsPrimaryEmail","emailsAdditionalEmails","phonesPrimaryPhoneNumber","phonesPrimaryPhoneCountryCode","phonesPrimaryPhoneCallingCode","jobTitle","companyId","leadStatus","updatedAt","assignedToId" FROM ${schema}."person" WHERE "leadStatus"='Not Attended' AND "deletedAt" IS NULL`);
   for (const p of res.rows) {
     // Check if task already exists for this person via taskTargets
-    const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."personId"=$1 AND t."title" LIKE 'Follow Up: Not Attended%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
+    const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."targetPersonId"=$1 AND t."title" LIKE 'Follow Up: Not Attended%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
     if (taskExists.rows.length===0) {
       // Create task due in 3h, mirroring People fields (emails, phones, company, jobTitle) + dueDate
       const taskId = require('crypto').randomUUID();
@@ -109,7 +109,7 @@ async function handleNotAttended(pg, schema) {
       } else {
         await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4)`, [taskId, title, due, p.assignedToId]);
       }
-      await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "personId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
+      await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "targetPersonId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
       console.log(`[agency] Not Attended task ${taskId} due ${due} for ${p.id} (mirrored fields)`);
     } else {
       const task = taskExists.rows[0];
@@ -133,7 +133,7 @@ async function handleFollowUp(pg, schema) {
   } catch {}
   const res = await pg.query(`SELECT id, "nameFirstName","emailsPrimaryEmail","phonesPrimaryPhoneNumber","jobTitle","companyId","leadStatus","updatedAt","assignedToId" FROM ${schema}."person" WHERE "leadStatus"='Follow Up' AND "deletedAt" IS NULL`);
   for (const p of res.rows) {
-    const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."personId"=$1 AND t."title" LIKE 'Follow Up:%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
+    const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."targetPersonId"=$1 AND t."title" LIKE 'Follow Up:%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
     if (taskExists.rows.length===0) {
       const taskId = require('crypto').randomUUID();
       const due = new Date(Date.now()+24*3600*1000).toISOString();
@@ -145,7 +145,7 @@ async function handleFollowUp(pg, schema) {
       } else {
         await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4)`, [taskId, title, due, p.assignedToId]);
       }
-      await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "personId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
+      await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "targetPersonId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
       console.log(`[agency] Follow Up task ${taskId} due ${due} for ${p.id} (mirrored)`);
     } else {
       const task = taskExists.rows[0];
