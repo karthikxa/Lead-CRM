@@ -86,15 +86,33 @@ async function createCalendarEvent(pg, person, opp) {
   }
 }
 
+const STATUS_DUE = { 'New': 5*24*3600*1000, 'Not Attended': 3*3600*1000, 'Follow Up': 3*3600*1000, 'Scheduled': 1*24*3600*1000, 'Booked': 7*24*3600*1000 };
+async function setDueDateSmart(pg, schema, personId, newStatus, existingDue) {
+  const interval = STATUS_DUE[newStatus];
+  if (!interval) return;
+  const newDue = new Date(Date.now() + interval);
+  if (!existingDue) {
+    await pg.query(`UPDATE ${schema}."person" SET "dueDate"=$1 WHERE id=$2`, [newDue.toISOString(), personId]);
+    console.log(`[agency] dueDate set ${newStatus} ${interval/3600000}h for ${personId} -> ${newDue.toISOString()}`);
+  } else {
+    const existing = new Date(existingDue);
+    if (newDue < existing) {
+      await pg.query(`UPDATE ${schema}."person" SET "dueDate"=$1 WHERE id=$2`, [newDue.toISOString(), personId]);
+      console.log(`[agency] dueDate shortened ${newStatus} for ${personId} ${existing.toISOString()} -> ${newDue.toISOString()}`);
+    } else {
+      console.log(`[agency] dueDate keep earlier ${existing.toISOString()} vs new ${newDue.toISOString()} for ${personId} (prevent manipulation)`);
+    }
+  }
+}
+
 async function handleNotAttended(pg, schema) {
-  // Move Not Attended → Task with due 3h, if due passed and status unchanged → move back to People (delete task or just reset follow-up)
   try {
     const colCheck = await pg.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='person' AND column_name='leadStatus'`, [schema]);
     if (!colCheck.rows.length) { console.log('[agency] skip Not Attended — leadStatus column missing in', schema); return; }
   } catch {}
-  const res = await pg.query(`SELECT id, "nameFirstName","nameLastName","emailsPrimaryEmail","emailsAdditionalEmails","phonesPrimaryPhoneNumber","phonesPrimaryPhoneCountryCode","phonesPrimaryPhoneCallingCode","jobTitle","companyId","leadStatus","updatedAt","assignedToId" FROM ${schema}."person" WHERE "leadStatus"='Not Attended' AND "deletedAt" IS NULL`);
+  const res = await pg.query(`SELECT id, "nameFirstName","nameLastName","emailsPrimaryEmail","emailsAdditionalEmails","phonesPrimaryPhoneNumber","phonesPrimaryPhoneCountryCode","phonesPrimaryPhoneCallingCode","jobTitle","companyId","leadStatus","updatedAt","assignedToId","dueDate" FROM ${schema}."person" WHERE "leadStatus"='Not Attended' AND "deletedAt" IS NULL`);
   for (const p of res.rows) {
-    // Check if task already exists for this person via taskTargets
+    await setDueDateSmart(pg, schema, p.id, 'Not Attended', p.dueDate);
     const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."targetPersonId"=$1 AND t."title" LIKE 'Follow Up: Not Attended%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
     if (taskExists.rows.length===0) {
       // Create task due in 3h, mirroring People fields (emails, phones, company, jobTitle) + dueDate
@@ -131,12 +149,13 @@ async function handleFollowUp(pg, schema) {
     const colCheck = await pg.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='person' AND column_name='leadStatus'`, [schema]);
     if (!colCheck.rows.length) return;
   } catch {}
-  const res = await pg.query(`SELECT id, "nameFirstName","emailsPrimaryEmail","phonesPrimaryPhoneNumber","jobTitle","companyId","leadStatus","updatedAt","assignedToId" FROM ${schema}."person" WHERE "leadStatus"='Follow Up' AND "deletedAt" IS NULL`);
+  const res = await pg.query(`SELECT id, "nameFirstName","emailsPrimaryEmail","phonesPrimaryPhoneNumber","jobTitle","companyId","leadStatus","updatedAt","assignedToId","dueDate" FROM ${schema}."person" WHERE "leadStatus"='Follow Up' AND "deletedAt" IS NULL`);
   for (const p of res.rows) {
+    await setDueDateSmart(pg, schema, p.id, 'Follow Up', p.dueDate);
     const taskExists = await pg.query(`SELECT t.id, t."dueAt", t.status FROM ${schema}."task" t JOIN ${schema}."taskTarget" tt ON tt."taskId"=t.id WHERE tt."targetPersonId"=$1 AND t."title" LIKE 'Follow Up:%' AND t."deletedAt" IS NULL ORDER BY t."dueAt" DESC LIMIT 1`, [p.id]);
     if (taskExists.rows.length===0) {
       const taskId = require('crypto').randomUUID();
-      const due = new Date(Date.now()+24*3600*1000).toISOString();
+      const due = new Date(Date.now()+3*3600*1000).toISOString();
       const title = `Follow Up: ${p.nameFirstName||''} ${p.emailsPrimaryEmail||p.id.slice(0,8)}`;
       const hasCols = await pg.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='task' AND column_name IN ('emails','phones','jobTitle','companyId')`, [schema]);
       const hasMirrors = hasCols.rows.length >= 4;
@@ -165,13 +184,14 @@ async function handleSchedule(pg, schema) {
     const colCheck = await pg.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='person' AND column_name='leadStatus'`, [schema]);
     if (!colCheck.rows.length) return;
   } catch {}
-  const res = await pg.query(`SELECT p.id, p."nameFirstName",p."nameLastName",p."emailsPrimaryEmail",p."emailsAdditionalEmails",p."phonesPrimaryPhoneNumber",p."phonesPrimaryPhoneCountryCode",p."phonesAdditionalPhones",p."jobTitle",p."companyId",p."assignedToId",p."leadStatus", p."updatedAt" FROM ${schema}."person" p WHERE p."leadStatus"='Scheduled' AND p."deletedAt" IS NULL`);
+  const res = await pg.query(`SELECT p.id, p."nameFirstName",p."nameLastName",p."emailsPrimaryEmail",p."emailsAdditionalEmails",p."phonesPrimaryPhoneNumber",p."phonesPrimaryPhoneCountryCode",p."phonesAdditionalPhones",p."jobTitle",p."companyId",p."assignedToId",p."leadStatus", p."updatedAt", p."dueDate" FROM ${schema}."person" p WHERE p."leadStatus"='Scheduled' AND p."deletedAt" IS NULL`);
   for (const p of res.rows) {
+    await setDueDateSmart(pg, schema, p.id, 'Scheduled', p.dueDate);
     const oppExists = await pg.query(`SELECT id FROM ${schema}."opportunity" WHERE "pointOfContactId"=$1 AND "deletedAt" IS NULL LIMIT 1`, [p.id]);
     if (oppExists.rows.length===0) {
       const oppId = require('crypto').randomUUID();
       const name = `${p.nameFirstName||''} ${p.nameLastName||''} - Scheduled`.trim() || `Scheduled ${p.emailsPrimaryEmail||p.id.slice(0,8)}`;
-      const closeDate = new Date(Date.now()+2*86400*1000).toISOString();
+      const closeDate = new Date(Date.now()+1*24*3600*1000).toISOString();
       // Mirror People fields to Opportunity + extra pointOfContact, budget (amount), meetingScheduled (closeDate)
       const hasCols = await pg.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='opportunity' AND column_name IN ('emails','phones','jobTitle')`, [schema]);
       const hasMirrors = hasCols.rows.length >= 3;
@@ -193,14 +213,15 @@ async function handleBooked(pg, schema) {
     const colCheck = await pg.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='person' AND column_name='leadStatus'`, [schema]);
     if (!colCheck.rows.length) return;
   } catch {}
-  const res = await pg.query(`SELECT p.id, p."nameFirstName",p."nameLastName",p."emailsPrimaryEmail",p."phonesPrimaryPhoneNumber",p."jobTitle",p."companyId",p."assignedToId" FROM ${schema}."person" p WHERE p."leadStatus"='Booked' AND p."deletedAt" IS NULL`);
+  const res = await pg.query(`SELECT p.id, p."nameFirstName",p."nameLastName",p."emailsPrimaryEmail",p."phonesPrimaryPhoneNumber",p."jobTitle",p."companyId",p."assignedToId",p."dueDate" FROM ${schema}."person" p WHERE p."leadStatus"='Booked' AND p."deletedAt" IS NULL`);
   for (const p of res.rows) {
+    await setDueDateSmart(pg, schema, p.id, 'Booked', p.dueDate);
     const oppExists = await pg.query(`SELECT id, name, "amountAmountMicros","amountCurrencyCode","closeDate" FROM ${schema}."opportunity" WHERE "pointOfContactId"=$1 AND "deletedAt" IS NULL LIMIT 1`, [p.id]);
     let opp = oppExists.rows[0] || null;
     if (!opp) {
       const oppId = require('crypto').randomUUID();
       const name = `${p.nameFirstName||''} ${p.nameLastName||''} - Booked`.trim();
-      const closeDate = new Date(Date.now()+3*86400*1000).toISOString();
+      const closeDate = new Date(Date.now()+7*24*3600*1000).toISOString();
       const hasCols = await pg.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='opportunity' AND column_name IN ('emails','phones','jobTitle')`, [schema]);
       const hasMirrors = hasCols.rows.length >= 3;
       if (hasMirrors) {
@@ -311,3 +332,4 @@ async function main() {
 }
 
 if (require.main === module) main();
+
