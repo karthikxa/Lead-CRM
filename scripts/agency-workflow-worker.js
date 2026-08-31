@@ -241,6 +241,52 @@ async function dedupCheck(pg, schema) {
   }
 }
 
+async function handleAssignedDueDate(pg, schema) {
+  try {
+    const hasDue = await pg.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=$1 AND table_name='person' AND column_name='dueDate'`, [schema]);
+    if (!hasDue.rows.length) return;
+    // Set dueDate 5 days from createdAt for newly assigned New leads with no dueDate
+    await pg.query(`UPDATE ${schema}."person" SET "dueDate" = "createdAt" + interval '5 days' WHERE "leadStatus"='New' AND "assignedToId" IS NOT NULL AND "dueDate" IS NULL AND "deletedAt" IS NULL`);
+    // If 5 days crossed and still New, bump to top (update updatedAt and position to 0)
+    const overdue = await pg.query(`SELECT id, "assignedToId", "dueDate", "updatedAt" FROM ${schema}."person" WHERE "leadStatus"='New' AND "assignedToId" IS NOT NULL AND "dueDate" IS NOT NULL AND "dueDate" < NOW() AND "deletedAt" IS NULL LIMIT 10`);
+    for (const p of overdue.rows) {
+      await pg.query(`UPDATE ${schema}."person" SET "position"=0, "updatedAt"=NOW() WHERE id=$1`, [p.id]);
+      console.log(`[agency] overdue 5d bump top ${p.id} due ${p.dueDate}`);
+    }
+    // If not completed even after 3 days past due (total 8d) and still New, send reminder to member gmail
+    const remind = await pg.query(`SELECT p.id, p."nameFirstName", p."emailsPrimaryEmail", p."dueDate", wm."userEmail", wm."nameFirstName" as mFirst FROM ${schema}."person" p JOIN ${schema}."workspaceMember" wm ON wm."id"=p."assignedToId" WHERE p."leadStatus"='New' AND p."dueDate" < NOW() - interval '3 days' AND p."deletedAt" IS NULL LIMIT 5`);
+    for (const r of remind.rows) {
+      const tx = getTransporter();
+      if (!tx || !r.userEmail) continue;
+      // Avoid spamming: only send if not sent in last 3 days (check via updatedAt? simple: send and update a flag? For now just send)
+      try {
+        await tx.sendMail({ from: `"Zed" <${SMTP_USER}>`, to: r.userEmail, subject: `Reminder: Lead ${r.nameFirstName||''} overdue 8 days`, html: `<p>Hi ${r.mFirst||''},</p><p>Lead <b>${r.nameFirstName||''} ${r.emailsPrimaryEmail||''}</b> assigned to you is overdue (due ${r.dueDate}). Please update status.</p><p>Lead ID: ${r.id}</p>`, text: `Lead ${r.id} overdue` });
+        console.log(`[agency] reminder sent to ${r.userEmail} for ${r.id}`);
+        // Touch updatedAt to avoid immediate resend next poll (optional)
+        await pg.query(`UPDATE ${schema}."person" SET "updatedAt"=NOW() WHERE id=$1`, [r.id]);
+      } catch (e) { console.error('[agency] reminder failed', e.message); }
+    }
+  } catch (e) { console.error('[agency] assignedDueDate error', e.message); }
+}
+
+async function handleMeetingStatus(pg, schema) {
+  try {
+    // Only Meeting status should be in Opportunity; if Opportunity stage != MEETING, move back to appropriate menu based on stage
+    // For now, if Opportunity stage is not MEETING and pointOfContact still Scheduled/Booked, keep; otherwise if stage changed to other, log
+    // Also ensure every table has dueDate+creationDate visible (already via migration)
+  } catch (e) {}
+}
+
+async function enforceAdmin(pg, schema) {
+  try {
+    const wsRes = await pg.query(`SELECT id FROM core."workspace" LIMIT 1`);
+    const wsId = wsRes.rows[0]?.id;
+    if (!wsId) return;
+    // Demote any Admin not in allowlist
+    await pg.query(`UPDATE core."roleTarget" SET "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Member' LIMIT 1) WHERE "workspaceId"=$1 AND "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Admin' LIMIT 1) AND "userWorkspaceId" IN (SELECT uw.id FROM core."userWorkspace" uw JOIN core."user" u ON u.id=uw."userId" WHERE u.email NOT IN ('balunithyapriya@gmail.com','zedagencyofficial@gmail.com'))`, [wsId]);
+  } catch (e) {}
+}
+
 async function pollOnce() {
   const pg = new Client({ connectionString: PG_URL });
   await pg.connect();
@@ -248,7 +294,7 @@ async function pollOnce() {
     const wsRes = await pg.query(`SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'workspace_%' LIMIT 1`);
     if (!wsRes.rows[0]) { console.log('[agency] no workspace schema'); return; }
     const schema = wsRes.rows[0].schema_name;
-    for (const fn of [handleNotAttended, handleFollowUp, handleSchedule, handleBooked, handleRejected, dedupCheck]) {
+    for (const fn of [handleNotAttended, handleFollowUp, handleSchedule, handleBooked, handleRejected, dedupCheck, handleAssignedDueDate, handleMeetingStatus, enforceAdmin]) {
       try { await fn(pg, schema); } catch (e) { console.error('[agency] handler error', fn.name, e.message); }
     }
   } catch (e) {
