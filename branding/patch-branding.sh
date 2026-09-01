@@ -373,6 +373,7 @@ if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
     authContent = authContent.replace(/async signInUpWithSocialSSO\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async signInUpWithSocialSSO({ firstName, lastName, email: userEmail, picture, billingCheckoutSessionState, authProvider }) {
+        console.log('[Zed] signInUpWithSocialSSO called for', userEmail, 'provider', authProvider, 'has userRepo', !!this.userRepository, 'has workspaceRepo', !!this.workspaceRepository, 'has appTokenRepo', !!this.appTokenRepository);
         const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
         let existingUser = await this.userRepository.findOne({
             where: { email: userEmail.toLowerCase() },
