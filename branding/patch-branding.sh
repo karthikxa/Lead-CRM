@@ -404,20 +404,30 @@ if (fs.existsSync(authServiceFile)) {
             });
 
             if (!userWorkspace) {
-                // Enforce invite-only: check for valid invitation for this email via raw query (no extra imports)
-                const inviteRows = await this.appTokenRepository.query(
-                    `SELECT id FROM core."appToken" WHERE "workspaceId"=$1 AND "type" IN ('InvitationToken','OnboardingInvitationToken') AND "deletedAt" IS NULL AND "expiresAt" > NOW() AND lower(context->>'email') = lower($2) LIMIT 1`,
-                    [defaultWorkspace.id, userEmail.toLowerCase()]
-                );
-                if (!inviteRows || inviteRows.length === 0) {
-                    throw new _authexception.AuthException('Not invited. Please ask an admin to invite you.', _authexception.AuthExceptionCode.FORBIDDEN_EXCEPTION);
+                // Enforce invite-only via WorkspaceInvitationService (uses appTokenRepository internally, no this.appTokenRepository needed)
+                let hasInvite = null;
+                try {
+                    hasInvite = await this.workspaceInvitationService.getOneWorkspaceInvitation(defaultWorkspace.id, userEmail.toLowerCase());
+                } catch {}
+                // Fallback: also check via userWorkspaceService if already invited via link hash
+                if (!hasInvite) {
+                    const existingInvite = await this.workspaceInvitationService.findInvitationsByEmail(userEmail.toLowerCase());
+                    hasInvite = existingInvite.find(inv => inv.workspaceId === defaultWorkspace.id && inv.context?.email?.toLowerCase() === userEmail.toLowerCase() && new Date(inv.expiresAt) > new Date());
+                }
+                if (!hasInvite) {
+                    // Also allow if user is already in workspace via userWorkspaceService check (already handled above, but double-check via service)
+                    const hasAccess = await this.userWorkspaceService.checkUserWorkspaceExists?.(existingUser.id, defaultWorkspace.id).catch(()=>false);
+                    if (!hasAccess) {
+                        throw new _authexception.AuthException('Not invited. Please ask an admin to invite you.', _authexception.AuthExceptionCode.FORBIDDEN_EXCEPTION);
+                    }
+                } else {
+                    try { await this.workspaceInvitationService.invalidateWorkspaceInvitation(defaultWorkspace.id, userEmail.toLowerCase()); } catch {}
                 }
                 userWorkspace = await this.userWorkspaceRepository.save({
                     userId: existingUser.id,
                     workspaceId: defaultWorkspace.id,
                     workspaceMemberId: require('crypto').randomUUID()
                 });
-                try { await this.appTokenRepository.delete(inviteRows[0].id); } catch {}
             }
 
             try {
