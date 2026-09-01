@@ -688,34 +688,10 @@ const CUSTOM_HIDE_CSS = `
   a[href*="/auth/google"],
   .last-badge,
   div:has(> .last-badge),
-  /* Completely hide Documentation menu & links in sidebar and settings - robust */
-  a[href*="docs."],
-  a[href*="getting-started"],
-  a[href*="documentation"],
-  [href*="docs.zed.agency"],
-  [href*="docs.twenty"],
-  [data-testid*="documentation-link"],
-  [data-testid*="documentation"],
-  [data-testid*="help-link"],
-  div:has(> a[href*="docs."]),
-  div:has(> [href*="docs."]),
-  div:has(> a[href*="getting-started"]),
-  div:has(> a[href*="documentation"]),
-  div:has(> div > a[href*="docs."]),
-  div:has(> svg[data-testid*="IconHelpCircle"]),
-  div:has(> span > svg[data-testid*="IconHelpCircle"]),
-  li:has(a[href*="docs."]),
-  /* Extra robust hide for Documentation label in NavigationDrawer and Settings */
-  span:has-text("Documentation"),
-  div:has-text("Documentation"),
-  li:has-text("Documentation"),
-  a:has-text("Documentation"),
-  div:has(> div > span:contains("Documentation")),
-  li:has(span:contains("Documentation")),
-  [data-testid*="IconHelpCircle"],
-  svg[data-testid="IconHelpCircle"],
-  div:has(svg[data-testid="IconHelpCircle"]) + div,
-  li:has(svg[data-icon="HelpCircle"]),
+  /* Hide Documentation links only (external docs) - keep navigation structure */
+  a[href*="docs.twenty.com"],
+  a[href*="docs.zed.agency"],
+  a[href*="https://docs.twenty.com"],
   /* Hide external documentation, community, discord, videos & promo sections */
   a[href*="discord"],
   a[href*="discord.gg"],
@@ -754,32 +730,33 @@ if (fs.existsSync(indexHtmlPath)) {
     const hideDocsScript = `<script id="zed-hide-docs">
 document.addEventListener('DOMContentLoaded', function() {
   function hideDocs() {
-    // Hide by text content
-    document.querySelectorAll('span, div, a, li').forEach(el => {
-      if (el.textContent && el.textContent.trim() === 'Documentation') {
-        let container = el.closest('li') || el.closest('a') || el.closest('div[data-testid*="navigation"]') || el.parentElement;
-        if (container) container.style.display = 'none';
-        el.style.display = 'none';
-      }
-    });
-    // Hide by HelpCircle icon (only Documentation uses it in Other section)
-    document.querySelectorAll('[data-testid="IconHelpCircle"], svg[data-icon="HelpCircle"]').forEach(icon => {
-      let item = icon.closest('li') || icon.closest('[data-testid*="navigation-drawer"]') || icon.closest('div');
-      if (item) {
-        // Check if sibling contains Documentation
-        let sibling = item.querySelector('span');
-        if (sibling && sibling.textContent.includes('Documentation')) {
-          (item.closest('li') || item).style.display = 'none';
-        } else if (item.textContent.includes('Documentation')) {
-          item.style.display = 'none';
+    // Only hide the specific NavigationDrawerItem for Documentation, not the whole Other section
+    document.querySelectorAll('.navigation-drawer-item').forEach(item => {
+      const label = item.textContent ? item.textContent.trim() : '';
+      if (label === 'Documentation' || (label.includes('Documentation') && item.querySelector('svg'))) {
+        // Check if this item is the Documentation one by looking for HelpCircle icon or exact label
+        const hasHelpIcon = item.querySelector('[data-testid="IconHelpCircle"], svg[data-icon="HelpCircle"], [data-icon="HelpCircle"]');
+        // Only hide if it has HelpCircle icon or exact Documentation text in a label span
+        const labelSpan = item.querySelector('span');
+        const isDoc = labelSpan && labelSpan.textContent.trim() === 'Documentation';
+        if (isDoc || hasHelpIcon) {
+          // Verify it's really Documentation by checking text
+          if (item.textContent.includes('Documentation')) {
+            item.style.display = 'none';
+            // Also hide the container div if needed
+            const container = item.closest('div');
+            if (container && container.classList.contains('navigation-drawer-item')) {
+              container.style.display = 'none';
+            }
+          }
         }
       }
     });
-    // Hide settings Documentation item
-    document.querySelectorAll('*').forEach(el => {
-      if (el.textContent === 'Documentation' && el.closest('[data-testid*="settings"]')) {
-        let row = el.closest('div') || el.closest('li') || el;
-        if (row) row.style.display = 'none';
+    // Fallback: hide any link directly to docs
+    document.querySelectorAll('a[href*="docs."]').forEach(a => {
+      if (a.textContent.includes('Documentation') || a.href.includes('docs.')) {
+        const item = a.closest('.navigation-drawer-item') || a;
+        if (item.textContent.includes('Documentation')) item.style.display = 'none';
       }
     });
   }
