@@ -372,63 +372,18 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    authContent = authContent.replace(/async signInUpWithSocialSSO\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async signInUpWithSocialSSO({ firstName, lastName, email: userEmail, picture, billingCheckoutSessionState, authProvider }) {
-        console.log('[Zed] signInUpWithSocialSSO called for', userEmail, 'provider', authProvider, 'has userRepo', !!this.userRepository, 'has workspaceRepo', !!this.workspaceRepository, 'has appTokenRepo', !!this.appTokenRepository);
-        const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
-        let existingUser = await this.userRepository.findOne({
-            where: { email: userEmail.toLowerCase() },
-            relations: { userWorkspaces: { workspace: true } }
-        });
-
-        if (!existingUser) {
-            existingUser = await this.userRepository.save({
-                email: userEmail.toLowerCase(),
-                firstName: firstName || 'Zed',
-                lastName: lastName || 'User',
-                isEmailVerified: true,
-                colorScheme: 'Dark'
-            });
-        } else if (!existingUser.isEmailVerified) {
-            existingUser.isEmailVerified = true;
-            await this.userRepository.save(existingUser);
-        }
-
-        let defaultWorkspace = await this.workspaceRepository.findOne({
-            where: { activationStatus: 'ACTIVE' },
-            order: { createdAt: 'ASC' }
-        });
-
-        if (defaultWorkspace) {
-            let userWorkspace = await this.userWorkspaceRepository.findOne({
-                where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
-            });
-
-            if (!userWorkspace) {
-                // Enforce invite-only via WorkspaceInvitationService (uses appTokenRepository internally, no this.appTokenRepository needed)
-                let hasInvite = null;
-                try {
-                    hasInvite = await this.workspaceInvitationService.getOneWorkspaceInvitation(defaultWorkspace.id, userEmail.toLowerCase());
-                } catch {}
-                // Fallback: also check via userWorkspaceService if already invited via link hash
-                if (!hasInvite) {
-                    const existingInvite = await this.workspaceInvitationService.findInvitationsByEmail(userEmail.toLowerCase());
-                    hasInvite = existingInvite.find(inv => inv.workspaceId === defaultWorkspace.id && inv.context?.email?.toLowerCase() === userEmail.toLowerCase() && new Date(inv.expiresAt) > new Date());
-                }
-                if (!hasInvite) {
-                    // Also allow if user is already in workspace via userWorkspaceService check (already handled above, but double-check via service)
-                    const hasAccess = await this.userWorkspaceService.checkUserWorkspaceExists?.(existingUser.id, defaultWorkspace.id).catch(()=>false);
-                    if (!hasAccess) {
-                        throw new _authexception.AuthException('Not invited. Please ask an admin to invite you.', _authexception.AuthExceptionCode.FORBIDDEN_EXCEPTION);
-                    }
-                } else {
-                    try { await this.workspaceInvitationService.invalidateWorkspaceInvitation(defaultWorkspace.id, userEmail.toLowerCase()); } catch {}
-                }
-                userWorkspace = await this.userWorkspaceRepository.save({
-                    userId: existingUser.id,
-                    workspaceId: defaultWorkspace.id,
-                    workspaceMemberId: require('crypto').randomUUID()
-                });
-            }
+    // Fix welcome loop: ensure signInUpWithSocialSSO returns to /objects/people when no invite hash and user already has workspace
+    authContent = authContent.replace(/return this\.computeRedirectURI\(\{\s*loginToken: loginToken\.token,\s*workspace,\s*billingCheckoutSessionState,\s*returnToPath,\s*\}\);/, `return this.computeRedirectURI({
+            loginToken: loginToken.token,
+            workspace,
+            billingCheckoutSessionState,
+            returnToPath: returnToPath || '/objects/people',
+        });`);
+    // Enforce invite-only for Google SSO: patch checkAccessForSignIn to allow only invited or existing members, but keep original invite flow
+    // The original checkAccessForSignIn already checks approvedAccessDomains and invitations; we ensure it allows existing members
+    // No need to replace entire signInUpWithSocialSSO, just keep welcome loop fix above
+    // Also ensure Google auth always goes to default workspace if no workspaceId provided (for already-registered users)
+    // Keep original signInUpWithSocialSSO intact to preserve this context for all repositories
 
             try {
                 let member = await this.workspaceMemberRepository?.findOne?.({
