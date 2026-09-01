@@ -403,11 +403,20 @@ if (fs.existsSync(authServiceFile)) {
             });
 
             if (!userWorkspace) {
+                // Enforce invite-only: check for valid invitation for this email via raw query (no extra imports)
+                const inviteRows = await this.appTokenRepository.query(
+                    `SELECT id FROM core."appToken" WHERE "workspaceId"=$1 AND "type" IN ('InvitationToken','OnboardingInvitationToken') AND "deletedAt" IS NULL AND "expiresAt" > NOW() AND lower(context->>'email') = lower($2) LIMIT 1`,
+                    [defaultWorkspace.id, userEmail.toLowerCase()]
+                );
+                if (!inviteRows || inviteRows.length === 0) {
+                    throw new _authexception.AuthException('Not invited. Please ask an admin to invite you.', _authexception.AuthExceptionCode.FORBIDDEN_EXCEPTION);
+                }
                 userWorkspace = await this.userWorkspaceRepository.save({
                     userId: existingUser.id,
                     workspaceId: defaultWorkspace.id,
                     workspaceMemberId: require('crypto').randomUUID()
                 });
+                try { await this.appTokenRepository.delete(inviteRows[0].id); } catch {}
             }
 
             try {
