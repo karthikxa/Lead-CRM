@@ -688,7 +688,7 @@ const CUSTOM_HIDE_CSS = `
   a[href*="/auth/google"],
   .last-badge,
   div:has(> .last-badge),
-  /* Completely hide Documentation menu & links in sidebar and settings */
+  /* Completely hide Documentation menu & links in sidebar and settings - robust */
   a[href*="docs."],
   a[href*="getting-started"],
   a[href*="documentation"],
@@ -705,6 +705,17 @@ const CUSTOM_HIDE_CSS = `
   div:has(> svg[data-testid*="IconHelpCircle"]),
   div:has(> span > svg[data-testid*="IconHelpCircle"]),
   li:has(a[href*="docs."]),
+  /* Extra robust hide for Documentation label in NavigationDrawer and Settings */
+  span:has-text("Documentation"),
+  div:has-text("Documentation"),
+  li:has-text("Documentation"),
+  a:has-text("Documentation"),
+  div:has(> div > span:contains("Documentation")),
+  li:has(span:contains("Documentation")),
+  [data-testid*="IconHelpCircle"],
+  svg[data-testid="IconHelpCircle"],
+  div:has(svg[data-testid="IconHelpCircle"]) + div,
+  li:has(svg[data-icon="HelpCircle"]),
   /* Hide external documentation, community, discord, videos & promo sections */
   a[href*="discord"],
   a[href*="discord.gg"],
@@ -739,7 +750,45 @@ if (fs.existsSync(indexHtmlPath)) {
     html = html.replace(/<link[^>]*rel=["'](?:shortcut\s+|alternate\s+)?icon["'][^>]*\/?>/gis, '');
     html = html.replace(/<link[^>]*rel=["']apple-touch-icon["'][^>]*\/?>/gis, '');
     html = html.replace(/<style id="zed-custom-clean">[\s\S]*?<\/style>/gis, '');
-    const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}`;
+    html = html.replace(/<script id="zed-hide-docs">[\s\S]*?<\/script>/gis, '');
+    const hideDocsScript = `<script id="zed-hide-docs">
+document.addEventListener('DOMContentLoaded', function() {
+  function hideDocs() {
+    // Hide by text content
+    document.querySelectorAll('span, div, a, li').forEach(el => {
+      if (el.textContent && el.textContent.trim() === 'Documentation') {
+        let container = el.closest('li') || el.closest('a') || el.closest('div[data-testid*="navigation"]') || el.parentElement;
+        if (container) container.style.display = 'none';
+        el.style.display = 'none';
+      }
+    });
+    // Hide by HelpCircle icon (only Documentation uses it in Other section)
+    document.querySelectorAll('[data-testid="IconHelpCircle"], svg[data-icon="HelpCircle"]').forEach(icon => {
+      let item = icon.closest('li') || icon.closest('[data-testid*="navigation-drawer"]') || icon.closest('div');
+      if (item) {
+        // Check if sibling contains Documentation
+        let sibling = item.querySelector('span');
+        if (sibling && sibling.textContent.includes('Documentation')) {
+          (item.closest('li') || item).style.display = 'none';
+        } else if (item.textContent.includes('Documentation')) {
+          item.style.display = 'none';
+        }
+      }
+    });
+    // Hide settings Documentation item
+    document.querySelectorAll('*').forEach(el => {
+      if (el.textContent === 'Documentation' && el.closest('[data-testid*="settings"]')) {
+        let row = el.closest('div') || el.closest('li') || el;
+        if (row) row.style.display = 'none';
+      }
+    });
+  }
+  hideDocs();
+  setInterval(hideDocs, 1500);
+  new MutationObserver(hideDocs).observe(document.body, {childList:true, subtree:true});
+});
+</script>`;
+    const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}\n    ${hideDocsScript}`;
     html = html.replace(/<head>/i, `<head>\n    ${newTags}`);
     fs.writeFileSync(indexHtmlPath, html, 'utf8');
 }
