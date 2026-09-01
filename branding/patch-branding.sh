@@ -393,7 +393,7 @@ if (fs.existsSync(authServiceFile)) {
         }
 
         let defaultWorkspace = await this.workspaceRepository.findOne({
-            where: { activationStatus: _workspacestatusenum.WorkspaceActivationStatus.ACTIVE },
+            where: { activationStatus: 'ACTIVE' },
             order: { createdAt: 'ASC' }
         });
 
