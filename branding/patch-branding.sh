@@ -553,6 +553,20 @@ function patchFrontAssets(dir) {
                 console.log('[Zed] Patched Logo component to use vector SVG:', f);
             }
 
+            // Remove Documentation NavigationDrawerItem from Other section and Settings (keep Other section structure)
+            if (content.includes('Documentation') && content.includes('IconHelpCircle')) {
+                // For NavigationDrawerOtherSection: remove the Documentation item but keep Settings
+                const beforeLen = content.length;
+                content = content.replace(/<NavigationDrawerItem[^>]*label=\{t`Documentation`\}[\s\S]*?Icon=\{IconHelpCircle\}[\s\S]*?\/>/g, '');
+                content = content.replace(/\{[\s\S]*?label:\s*t`Documentation`[\s\S]*?Icon:\s*IconHelpCircle[\s\S]*?\},/g, '');
+                // Also handle minified JS where label is "Documentation" and IconHelpCircle
+                content = content.replace(/label:\s*t`Documentation`[\s\S]{0,300}IconHelpCircle/g, 'label:t`Hidden`');
+                if (content.length !== beforeLen) {
+                    modified = true;
+                    console.log('[Zed] Removed Documentation item from:', f);
+                }
+            }
+
             if (modified) {
                 fs.writeFileSync(fullPath, content, 'utf8');
             }
@@ -688,10 +702,9 @@ const CUSTOM_HIDE_CSS = `
   a[href*="/auth/google"],
   .last-badge,
   div:has(> .last-badge),
-  /* Hide Documentation links only (external docs) - keep navigation structure */
+  /* Hide external documentation links */
   a[href*="docs.twenty.com"],
   a[href*="docs.zed.agency"],
-  a[href*="https://docs.twenty.com"],
   /* Hide external documentation, community, discord, videos & promo sections */
   a[href*="discord"],
   a[href*="discord.gg"],
@@ -699,8 +712,6 @@ const CUSTOM_HIDE_CSS = `
   a[href*="youtube.com"],
   a[href*="loom.com"],
   a[href*="vimeo.com"],
-  a[href*="/settings/community"],
-  a[href*="/community"],
   img[src*="/images/ai/"],
   img[src*="cover-light"],
   img[src*="cover-dark"],
@@ -729,40 +740,15 @@ if (fs.existsSync(indexHtmlPath)) {
     html = html.replace(/<script id="zed-hide-docs">[\s\S]*?<\/script>/gis, '');
     const hideDocsScript = `<script id="zed-hide-docs">
 document.addEventListener('DOMContentLoaded', function() {
-  function hideDocs() {
-    // Only hide the specific NavigationDrawerItem for Documentation, not the whole Other section
-    document.querySelectorAll('.navigation-drawer-item').forEach(item => {
-      const label = item.textContent ? item.textContent.trim() : '';
-      if (label === 'Documentation' || (label.includes('Documentation') && item.querySelector('svg'))) {
-        // Check if this item is the Documentation one by looking for HelpCircle icon or exact label
-        const hasHelpIcon = item.querySelector('[data-testid="IconHelpCircle"], svg[data-icon="HelpCircle"], [data-icon="HelpCircle"]');
-        // Only hide if it has HelpCircle icon or exact Documentation text in a label span
-        const labelSpan = item.querySelector('span');
-        const isDoc = labelSpan && labelSpan.textContent.trim() === 'Documentation';
-        if (isDoc || hasHelpIcon) {
-          // Verify it's really Documentation by checking text
-          if (item.textContent.includes('Documentation')) {
-            item.style.display = 'none';
-            // Also hide the container div if needed
-            const container = item.closest('div');
-            if (container && container.classList.contains('navigation-drawer-item')) {
-              container.style.display = 'none';
-            }
-          }
-        }
-      }
-    });
-    // Fallback: hide any link directly to docs
-    document.querySelectorAll('a[href*="docs."]').forEach(a => {
-      if (a.textContent.includes('Documentation') || a.href.includes('docs.')) {
-        const item = a.closest('.navigation-drawer-item') || a;
-        if (item.textContent.includes('Documentation')) item.style.display = 'none';
-      }
+  // Fallback: hide any direct external docs links if still present (source patch should have removed nav items)
+  function hideExternalDocs() {
+    document.querySelectorAll('a[href*="docs.twenty.com"], a[href*="docs.zed.agency"]').forEach(a => {
+      const item = a.closest('.navigation-drawer-item') || a.closest('li') || a;
+      if (item && item.textContent.includes('Documentation')) item.style.display = 'none';
     });
   }
-  hideDocs();
-  setInterval(hideDocs, 1500);
-  new MutationObserver(hideDocs).observe(document.body, {childList:true, subtree:true});
+  hideExternalDocs();
+  new MutationObserver(hideExternalDocs).observe(document.body, {childList:true, subtree:true});
 });
 </script>`;
     const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}\n    ${hideDocsScript}`;
