@@ -379,67 +379,12 @@ if (fs.existsSync(authServiceFile)) {
             billingCheckoutSessionState,
             returnToPath: returnToPath || '/objects/people',
         });`);
-    // Enforce invite-only for Google SSO: patch checkAccessForSignIn to allow only invited or existing members, but keep original invite flow
-    // The original checkAccessForSignIn already checks approvedAccessDomains and invitations; we ensure it allows existing members
-    // No need to replace entire signInUpWithSocialSSO, just keep welcome loop fix above
-    // Also ensure Google auth always goes to default workspace if no workspaceId provided (for already-registered users)
-    // Keep original signInUpWithSocialSSO intact to preserve this context for all repositories
-
-            try {
-                let member = await this.workspaceMemberRepository?.findOne?.({
-                    where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
-                });
-                if (!member && this.workspaceMemberRepository) {
-                    await this.workspaceMemberRepository.save({
-                        id: userWorkspace.workspaceMemberId,
-                        userId: existingUser.id,
-                        workspaceId: defaultWorkspace.id,
-                        name: { firstName: firstName || 'Zed', lastName: lastName || 'User' },
-                        userEmail: existingUser.email,
-                        colorScheme: 'Dark',
-                        locale: 'en'
-                    });
-                }
-
-                if (this.roleTargetRepository && this.roleRepository) {
-                    const isAdmin = adminEmails.includes(existingUser.email.toLowerCase()) || existingUser.email.toLowerCase().endsWith('@zed.agency');
-                    const targetRoleName = isAdmin ? 'Admin' : 'Member';
-                    const role = await this.roleRepository.findOne({
-                        where: { workspaceId: defaultWorkspace.id, label: targetRoleName }
-                    }) || await this.roleRepository.findOne({
-                        where: { workspaceId: defaultWorkspace.id }
-                    });
-
-                    if (role) {
-                        const existingRoleTarget = await this.roleTargetRepository.findOne({
-                            where: { userWorkspaceId: userWorkspace.id, workspaceId: defaultWorkspace.id }
-                        });
-                        if (!existingRoleTarget) {
-                            const app = await this.applicationRepository?.findOneBy?.({}) || null;
-                            await this.roleTargetRepository.save({
-                                workspaceId: defaultWorkspace.id,
-                                roleId: role.id,
-                                userWorkspaceId: userWorkspace.id,
-                                applicationId: app ? app.id : '41d1b956-28c2-4d14-9188-b7d401aacef5',
-                                universalIdentifier: require('crypto').randomUUID()
-                            });
-                        }
-                    }
-                }
-            } catch (roleErr) {
-                console.log('[Zed] Role target auto-assignment notice:', roleErr.message);
-            }
-        }
-
-        const loginToken = await this.loginTokenService.generateLoginToken(existingUser.email, defaultWorkspace ? defaultWorkspace.id : undefined, authProvider);
-        return this.computeRedirectURI({
+    authContent = authContent.replace(/return this\.computeRedirectURI\(\{\s*loginToken: loginToken\.token,\s*workspace,\s*billingCheckoutSessionState,\s*returnToPath,\s*\}\);/, `return this.computeRedirectURI({
             loginToken: loginToken.token,
-            workspace: defaultWorkspace,
+            workspace,
             billingCheckoutSessionState,
-            returnToPath: '/objects/people'
-        });
-    }
-    async createSSOConnectedAccountIfFeatureFlagIsOn`);
+            returnToPath: returnToPath || '/objects/people',
+        });`);
 
     fs.writeFileSync(authServiceFile, authContent, 'utf8');
     console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSSO!');
