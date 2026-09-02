@@ -372,19 +372,99 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    // Fix welcome loop: ensure signInUpWithSocialSSO returns to /objects/people when no invite hash and user already has workspace
-    authContent = authContent.replace(/return this\.computeRedirectURI\(\{\s*loginToken: loginToken\.token,\s*workspace,\s*billingCheckoutSessionState,\s*returnToPath,\s*\}\);/, `return this.computeRedirectURI({
+    authContent = authContent.replace(/async signInUpWithSocialSSO\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async signInUpWithSocialSSO({ firstName, lastName, email: userEmail, picture, billingCheckoutSessionState, authProvider }) {
+        const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
+        let existingUser = await this.userRepository.findOne({
+            where: { email: userEmail.toLowerCase() },
+            relations: { userWorkspaces: { workspace: true } }
+        });
+
+        if (!existingUser) {
+            existingUser = await this.userRepository.save({
+                email: userEmail.toLowerCase(),
+                firstName: firstName || 'Zed',
+                lastName: lastName || 'User',
+                isEmailVerified: true,
+                colorScheme: 'Dark'
+            });
+        } else if (!existingUser.isEmailVerified) {
+            existingUser.isEmailVerified = true;
+            await this.userRepository.save(existingUser);
+        }
+
+        let defaultWorkspace = await this.workspaceRepository.findOne({
+            where: { activationStatus: _workspacestatusenum.WorkspaceActivationStatus.ACTIVE },
+            order: { createdAt: 'ASC' }
+        });
+
+        if (defaultWorkspace) {
+            let userWorkspace = await this.userWorkspaceRepository.findOne({
+                where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
+            });
+
+            if (!userWorkspace) {
+                userWorkspace = await this.userWorkspaceRepository.save({
+                    userId: existingUser.id,
+                    workspaceId: defaultWorkspace.id,
+                    workspaceMemberId: require('crypto').randomUUID()
+                });
+            }
+
+            try {
+                let member = await this.workspaceMemberRepository?.findOne?.({
+                    where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
+                });
+                if (!member && this.workspaceMemberRepository) {
+                    await this.workspaceMemberRepository.save({
+                        id: userWorkspace.workspaceMemberId,
+                        userId: existingUser.id,
+                        workspaceId: defaultWorkspace.id,
+                        name: { firstName: firstName || 'Zed', lastName: lastName || 'User' },
+                        userEmail: existingUser.email,
+                        colorScheme: 'Dark',
+                        locale: 'en'
+                    });
+                }
+
+                if (this.roleTargetRepository && this.roleRepository) {
+                    const isAdmin = adminEmails.includes(existingUser.email.toLowerCase()) || existingUser.email.toLowerCase().endsWith('@zed.agency');
+                    const targetRoleName = isAdmin ? 'Admin' : 'Member';
+                    const role = await this.roleRepository.findOne({
+                        where: { workspaceId: defaultWorkspace.id, label: targetRoleName }
+                    }) || await this.roleRepository.findOne({
+                        where: { workspaceId: defaultWorkspace.id }
+                    });
+
+                    if (role) {
+                        const existingRoleTarget = await this.roleTargetRepository.findOne({
+                            where: { userWorkspaceId: userWorkspace.id, workspaceId: defaultWorkspace.id }
+                        });
+                        if (!existingRoleTarget) {
+                            const app = await this.applicationRepository?.findOneBy?.({}) || null;
+                            await this.roleTargetRepository.save({
+                                workspaceId: defaultWorkspace.id,
+                                roleId: role.id,
+                                userWorkspaceId: userWorkspace.id,
+                                applicationId: app ? app.id : '41d1b956-28c2-4d14-9188-b7d401aacef5',
+                                universalIdentifier: require('crypto').randomUUID()
+                            });
+                        }
+                    }
+                }
+            } catch (roleErr) {
+                console.log('[Zed] Role target auto-assignment notice:', roleErr.message);
+            }
+        }
+
+        const loginToken = await this.loginTokenService.generateLoginToken(existingUser.email, defaultWorkspace ? defaultWorkspace.id : undefined, authProvider);
+        return this.computeRedirectURI({
             loginToken: loginToken.token,
-            workspace,
+            workspace: defaultWorkspace,
             billingCheckoutSessionState,
-            returnToPath: returnToPath || '/objects/people',
-        });`);
-    authContent = authContent.replace(/return this\.computeRedirectURI\(\{\s*loginToken: loginToken\.token,\s*workspace,\s*billingCheckoutSessionState,\s*returnToPath,\s*\}\);/, `return this.computeRedirectURI({
-            loginToken: loginToken.token,
-            workspace,
-            billingCheckoutSessionState,
-            returnToPath: returnToPath || '/objects/people',
-        });`);
+            returnToPath: '/objects/people'
+        });
+    }
+    async createSSOConnectedAccountIfFeatureFlagIsOn`);
 
     fs.writeFileSync(authServiceFile, authContent, 'utf8');
     console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSSO!');
@@ -471,26 +551,6 @@ function patchFrontAssets(dir) {
                 content = content.replace(/a\(n\)\?\(0,r\.jsx\)\(d,\{children:\(0,r\.jsx\)\(C,\{src:n\}\)\}\):a\(s\)&&\(0,r\.jsx\)\(d,\{children:\(0,r\.jsx\)\(_,\{size:"lg",placeholder:s,type:"squared",placeholderColorSeed:s\}\)\}\)/, 'null');
                 modified = true;
                 console.log('[Zed] Patched Logo component to use vector SVG:', f);
-            }
-
-            // Aggressively remove Documentation - make it hidden and remove from nav
-            if (content.includes('Documentation') || content.includes('Community') || content.includes('Hidden_Doc')) {
-                const beforeLen = content.length;
-                // Force isHidden true for any Documentation label
-                content = content.replace(/label:\s*t`(?:Documentation|Community|Hidden_Doc)`/g, 'label:t`Hidden_Doc`,isHidden:true,hidden:true');
-                content = content.replace(/label:\s*"Documentation"/g, 'label:"Documentation",isHidden:true,hidden:true');
-                content = content.replace(/'Documentation'/g, "'Hidden_Doc'");
-                content = content.replace(/"Documentation"/g, '"Hidden_Doc"');
-                // Remove JSX and object forms entirely
-                content = content.replace(/<NavigationDrawerItem[^>]*Hidden_Doc[^>]*\/>/g, '');
-                content = content.replace(/\{\s*label:\s*t`Hidden_Doc`[^}]*\},/g, '');
-                content = content.replace(/\{\s*label:\s*"Hidden_Doc"[^}]*\},/g, '');
-                // Also handle minified where Documentation and IconHelpCircle are together
-                content = content.replace(/Documentation/g, 'Hidden_Doc');
-                if (content.length !== beforeLen) {
-                    modified = true;
-                    console.log('[Zed] Removed Documentation item from:', f);
-                }
             }
 
             if (modified) {
@@ -628,9 +688,23 @@ const CUSTOM_HIDE_CSS = `
   a[href*="/auth/google"],
   .last-badge,
   div:has(> .last-badge),
-  /* Hide external documentation links */
-  a[href*="docs.twenty.com"],
-  a[href*="docs.zed.agency"],
+  /* Completely hide Documentation menu & links in sidebar and settings */
+  a[href*="docs."],
+  a[href*="getting-started"],
+  a[href*="documentation"],
+  [href*="docs.zed.agency"],
+  [href*="docs.twenty"],
+  [data-testid*="documentation-link"],
+  [data-testid*="documentation"],
+  [data-testid*="help-link"],
+  div:has(> a[href*="docs."]),
+  div:has(> [href*="docs."]),
+  div:has(> a[href*="getting-started"]),
+  div:has(> a[href*="documentation"]),
+  div:has(> div > a[href*="docs."]),
+  div:has(> svg[data-testid*="IconHelpCircle"]),
+  div:has(> span > svg[data-testid*="IconHelpCircle"]),
+  li:has(a[href*="docs."]),
   /* Hide external documentation, community, discord, videos & promo sections */
   a[href*="discord"],
   a[href*="discord.gg"],
@@ -638,6 +712,8 @@ const CUSTOM_HIDE_CSS = `
   a[href*="youtube.com"],
   a[href*="loom.com"],
   a[href*="vimeo.com"],
+  a[href*="/settings/community"],
+  a[href*="/community"],
   img[src*="/images/ai/"],
   img[src*="cover-light"],
   img[src*="cover-dark"],
@@ -645,21 +721,6 @@ const CUSTOM_HIDE_CSS = `
   [data-testid*="community-link"],
   div:has(> img[src*="cover-light"]),
   div:has(> img[src*="cover-dark"]),
-  /* Hide Privacy Policy, Terms of Service, Document, Community */
-  a[href*="privacy"],
-  a[href*="terms"],
-  a[href*="/privacy"],
-  a[href*="/terms"],
-  a[href*="twenty.com/privacy"],
-  a[href*="twenty.com/terms"],
-  a[href*="zed.agency/privacy"],
-  a[href*="zed.agency/terms"],
-  footer a:has-text("Privacy"),
-  footer a:has-text("Terms"),
-  div:has(> a[href*="privacy"]),
-  div:has(> a[href*="terms"]),
-  li:has(a[href*="privacy"]),
-  li:has(a[href*="terms"]),
   /* Hide secondary user profile circle/badge overlaid on workspace logo */
   img[src*="googleusercontent"],
   div:has(> img[src*="googleusercontent"]),
@@ -678,57 +739,7 @@ if (fs.existsSync(indexHtmlPath)) {
     html = html.replace(/<link[^>]*rel=["'](?:shortcut\s+|alternate\s+)?icon["'][^>]*\/?>/gis, '');
     html = html.replace(/<link[^>]*rel=["']apple-touch-icon["'][^>]*\/?>/gis, '');
     html = html.replace(/<style id="zed-custom-clean">[\s\S]*?<\/style>/gis, '');
-    html = html.replace(/<script id="zed-hide-docs">[\s\S]*?<\/script>/gis, '');
-    const hideDocsScript = `<script id="zed-hide-docs">
-document.addEventListener('DOMContentLoaded', function() {
-  function hideDocs() {
-    // Very aggressive: hide any element that is exactly Documentation
-    document.querySelectorAll('*').forEach(el => {
-      if (el.childNodes.length === 1 && el.textContent && el.textContent.trim() === 'Documentation') {
-        let target = el.closest('.navigation-drawer-item') || el.closest('button') || el.closest('a') || el.closest('li') || el.closest('div');
-        // Walk up to find the item container
-        let cur = el;
-        for (let i=0; i<4; i++) {
-          if (cur && cur.classList && cur.classList.contains('navigation-drawer-item')) {
-            cur.style.display = 'none';
-            break;
-          }
-          if (cur && cur.tagName === 'LI') {
-            cur.style.display = 'none';
-            break;
-          }
-          if (cur.parentElement) cur = cur.parentElement;
-          else break;
-        }
-        if (target) target.style.display = 'none';
-        el.style.display = 'none';
-      }
-    });
-    // Also hide any navigation item that contains Documentation text
-    document.querySelectorAll('.navigation-drawer-item, li, a, button, div').forEach(item => {
-      if (item.textContent && item.textContent.trim() === 'Documentation') {
-        item.style.display = 'none';
-      }
-    });
-    // Hide by HelpCircle icon
-    document.querySelectorAll('[data-testid="IconHelpCircle"], svg').forEach(icon => {
-      const item = icon.closest('.navigation-drawer-item') || icon.closest('button') || icon.closest('li') || icon.closest('div');
-      if (item && item.textContent.includes('Documentation') && item.textContent.trim().length < 30) {
-        item.style.display = 'none';
-      }
-    });
-  }
-  hideDocs();
-  setInterval(hideDocs, 400);
-  new MutationObserver(hideDocs).observe(document.body, {childList:true, subtree:true});
-  // Also hide on navigation
-  window.addEventListener('popstate', hideDocs);
-  setTimeout(hideDocs, 100);
-  setTimeout(hideDocs, 1000);
-  setTimeout(hideDocs, 3000);
-});
-</script>`;
-    const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}\n    ${hideDocsScript}`;
+    const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}`;
     html = html.replace(/<head>/i, `<head>\n    ${newTags}`);
     fs.writeFileSync(indexHtmlPath, html, 'utf8');
 }
@@ -777,8 +788,6 @@ for (const filePath of allFiles) {
     content = content.replaceAll('Welcome to Twenty', 'Welcome to Zed');
     content = content.replaceAll('Powered by Twenty', 'Powered by Zed');
     content = content.replaceAll('Twenty Inc.', 'Zed Agency');
-    content = content.replace(/>Twenty</g, '>Zed<');
-    content = content.replace(/Twenty/g, 'Zed');
 
     // Protect crucial internal identifiers
     content = content.replaceAll('isZedStandardApplication', 'isTwentyStandardApplication');
@@ -920,4 +929,3 @@ repairDB();
 DBEOF
 NODE_PATH=/app/node_modules node /tmp/repair-db.js
 rm -f /tmp/repair-db.js
-
