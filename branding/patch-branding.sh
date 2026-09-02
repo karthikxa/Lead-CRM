@@ -474,10 +474,10 @@ function patchFrontAssets(dir) {
             }
 
             // Aggressively remove Documentation - make it hidden and remove from nav
-            if (content.includes('Documentation')) {
+            if (content.includes('Documentation') || content.includes('Community') || content.includes('Hidden_Doc')) {
                 const beforeLen = content.length;
                 // Force isHidden true for any Documentation label
-                content = content.replace(/label:\s*t`Documentation`/g, 'label:t`Documentation`,isHidden:true,hidden:true');
+                content = content.replace(/label:\s*t`(?:Documentation|Community|Hidden_Doc)`/g, 'label:t`Hidden_Doc`,isHidden:true,hidden:true');
                 content = content.replace(/label:\s*"Documentation"/g, 'label:"Documentation",isHidden:true,hidden:true');
                 content = content.replace(/'Documentation'/g, "'Hidden_Doc'");
                 content = content.replace(/"Documentation"/g, '"Hidden_Doc"');
@@ -920,3 +920,4 @@ repairDB();
 DBEOF
 NODE_PATH=/app/node_modules node /tmp/repair-db.js
 rm -f /tmp/repair-db.js
+
