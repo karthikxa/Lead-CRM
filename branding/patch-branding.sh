@@ -777,6 +777,8 @@ for (const filePath of allFiles) {
     content = content.replaceAll('Welcome to Twenty', 'Welcome to Zed');
     content = content.replaceAll('Powered by Twenty', 'Powered by Zed');
     content = content.replaceAll('Twenty Inc.', 'Zed Agency');
+    content = content.replace(/>Twenty</g, '>Zed<');
+    content = content.replace(/Twenty/g, 'Zed');
 
     // Protect crucial internal identifiers
     content = content.replaceAll('isZedStandardApplication', 'isTwentyStandardApplication');
