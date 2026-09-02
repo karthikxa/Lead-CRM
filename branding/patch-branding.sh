@@ -639,6 +639,21 @@ const CUSTOM_HIDE_CSS = `
   [data-testid*="community-link"],
   div:has(> img[src*="cover-light"]),
   div:has(> img[src*="cover-dark"]),
+  /* Hide Privacy Policy, Terms of Service, Document, Community */
+  a[href*="privacy"],
+  a[href*="terms"],
+  a[href*="/privacy"],
+  a[href*="/terms"],
+  a[href*="twenty.com/privacy"],
+  a[href*="twenty.com/terms"],
+  a[href*="zed.agency/privacy"],
+  a[href*="zed.agency/terms"],
+  footer a:has-text("Privacy"),
+  footer a:has-text("Terms"),
+  div:has(> a[href*="privacy"]),
+  div:has(> a[href*="terms"]),
+  li:has(a[href*="privacy"]),
+  li:has(a[href*="terms"]),
   /* Hide secondary user profile circle/badge overlaid on workspace logo */
   img[src*="googleusercontent"],
   div:has(> img[src*="googleusercontent"]),
@@ -660,11 +675,26 @@ if (fs.existsSync(indexHtmlPath)) {
     html = html.replace(/<script id="zed-hide-docs">[\s\S]*?<\/script>/gis, '');
     const hideDocsScript = `<script id="zed-hide-docs">
 document.addEventListener('DOMContentLoaded', function() {
-  // Fallback: hide any direct external docs links if still present (source patch should have removed nav items)
   function hideExternalDocs() {
-    document.querySelectorAll('a[href*="docs.twenty.com"], a[href*="docs.zed.agency"]').forEach(a => {
-      const item = a.closest('.navigation-drawer-item') || a.closest('li') || a;
-      if (item && item.textContent.includes('Documentation')) item.style.display = 'none';
+    document.querySelectorAll('a[href*="docs.twenty.com"], a[href*="docs.zed.agency"], a[href*="privacy"], a[href*="terms"], footer a').forEach(a => {
+      const text = a.textContent ? a.textContent.toLowerCase() : '';
+      if (text.includes('documentation') || text.includes('privacy') || text.includes('terms of service') || text.includes('community') || a.href.includes('privacy') || a.href.includes('terms')) {
+        const item = a.closest('.navigation-drawer-item') || a.closest('li') || a.closest('footer') || a;
+        if (item) {
+          // Only hide the specific link, not the whole footer
+          if (a.href.includes('privacy') || a.href.includes('terms') || text.includes('privacy') || text.includes('terms')) {
+            a.style.display = 'none';
+            const sep = a.nextElementSibling;
+            if (sep && sep.textContent.includes('•')) sep.style.display = 'none';
+          } else if (item.textContent.includes('Documentation')) {
+            item.style.display = 'none';
+          }
+        }
+      }
+    });
+    // Also hide Community in Other section if still present
+    document.querySelectorAll('.navigation-drawer-item').forEach(item => {
+      if (item.textContent.trim() === 'Community') item.style.display = 'none';
     });
   }
   hideExternalDocs();
