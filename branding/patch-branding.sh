@@ -473,14 +473,20 @@ function patchFrontAssets(dir) {
                 console.log('[Zed] Patched Logo component to use vector SVG:', f);
             }
 
-            // Remove Documentation NavigationDrawerItem from Other section and Settings (keep Other section structure)
-            if (content.includes('Documentation') && content.includes('IconHelpCircle')) {
-                // For NavigationDrawerOtherSection: remove the Documentation item but keep Settings
+            // Aggressively remove Documentation - make it hidden and remove from nav
+            if (content.includes('Documentation')) {
                 const beforeLen = content.length;
-                content = content.replace(/<NavigationDrawerItem[^>]*label=\{t`Documentation`\}[\s\S]*?Icon=\{IconHelpCircle\}[\s\S]*?\/>/g, '');
-                content = content.replace(/\{[\s\S]*?label:\s*t`Documentation`[\s\S]*?Icon:\s*IconHelpCircle[\s\S]*?\},/g, '');
-                // Also handle minified JS where label is "Documentation" and IconHelpCircle
-                content = content.replace(/label:\s*t`Documentation`[\s\S]{0,300}IconHelpCircle/g, 'label:t`Hidden`');
+                // Force isHidden true for any Documentation label
+                content = content.replace(/label:\s*t`Documentation`/g, 'label:t`Documentation`,isHidden:true,hidden:true');
+                content = content.replace(/label:\s*"Documentation"/g, 'label:"Documentation",isHidden:true,hidden:true');
+                content = content.replace(/'Documentation'/g, "'Hidden_Doc'");
+                content = content.replace(/"Documentation"/g, '"Hidden_Doc"');
+                // Remove JSX and object forms entirely
+                content = content.replace(/<NavigationDrawerItem[^>]*Hidden_Doc[^>]*\/>/g, '');
+                content = content.replace(/\{\s*label:\s*t`Hidden_Doc`[^}]*\},/g, '');
+                content = content.replace(/\{\s*label:\s*"Hidden_Doc"[^}]*\},/g, '');
+                // Also handle minified where Documentation and IconHelpCircle are together
+                content = content.replace(/Documentation/g, 'Hidden_Doc');
                 if (content.length !== beforeLen) {
                     modified = true;
                     console.log('[Zed] Removed Documentation item from:', f);
@@ -675,30 +681,51 @@ if (fs.existsSync(indexHtmlPath)) {
     html = html.replace(/<script id="zed-hide-docs">[\s\S]*?<\/script>/gis, '');
     const hideDocsScript = `<script id="zed-hide-docs">
 document.addEventListener('DOMContentLoaded', function() {
-  function hideExternalDocs() {
-    document.querySelectorAll('a[href*="docs.twenty.com"], a[href*="docs.zed.agency"], a[href*="privacy"], a[href*="terms"], footer a').forEach(a => {
-      const text = a.textContent ? a.textContent.toLowerCase() : '';
-      if (text.includes('documentation') || text.includes('privacy') || text.includes('terms of service') || text.includes('community') || a.href.includes('privacy') || a.href.includes('terms')) {
-        const item = a.closest('.navigation-drawer-item') || a.closest('li') || a.closest('footer') || a;
-        if (item) {
-          // Only hide the specific link, not the whole footer
-          if (a.href.includes('privacy') || a.href.includes('terms') || text.includes('privacy') || text.includes('terms')) {
-            a.style.display = 'none';
-            const sep = a.nextElementSibling;
-            if (sep && sep.textContent.includes('•')) sep.style.display = 'none';
-          } else if (item.textContent.includes('Documentation')) {
-            item.style.display = 'none';
+  function hideDocs() {
+    // Very aggressive: hide any element that is exactly Documentation
+    document.querySelectorAll('*').forEach(el => {
+      if (el.childNodes.length === 1 && el.textContent && el.textContent.trim() === 'Documentation') {
+        let target = el.closest('.navigation-drawer-item') || el.closest('button') || el.closest('a') || el.closest('li') || el.closest('div');
+        // Walk up to find the item container
+        let cur = el;
+        for (let i=0; i<4; i++) {
+          if (cur && cur.classList && cur.classList.contains('navigation-drawer-item')) {
+            cur.style.display = 'none';
+            break;
           }
+          if (cur && cur.tagName === 'LI') {
+            cur.style.display = 'none';
+            break;
+          }
+          if (cur.parentElement) cur = cur.parentElement;
+          else break;
         }
+        if (target) target.style.display = 'none';
+        el.style.display = 'none';
       }
     });
-    // Also hide Community in Other section if still present
-    document.querySelectorAll('.navigation-drawer-item').forEach(item => {
-      if (item.textContent.trim() === 'Community') item.style.display = 'none';
+    // Also hide any navigation item that contains Documentation text
+    document.querySelectorAll('.navigation-drawer-item, li, a, button, div').forEach(item => {
+      if (item.textContent && item.textContent.trim() === 'Documentation') {
+        item.style.display = 'none';
+      }
+    });
+    // Hide by HelpCircle icon
+    document.querySelectorAll('[data-testid="IconHelpCircle"], svg').forEach(icon => {
+      const item = icon.closest('.navigation-drawer-item') || icon.closest('button') || icon.closest('li') || icon.closest('div');
+      if (item && item.textContent.includes('Documentation') && item.textContent.trim().length < 30) {
+        item.style.display = 'none';
+      }
     });
   }
-  hideExternalDocs();
-  new MutationObserver(hideExternalDocs).observe(document.body, {childList:true, subtree:true});
+  hideDocs();
+  setInterval(hideDocs, 400);
+  new MutationObserver(hideDocs).observe(document.body, {childList:true, subtree:true});
+  // Also hide on navigation
+  window.addEventListener('popstate', hideDocs);
+  setTimeout(hideDocs, 100);
+  setTimeout(hideDocs, 1000);
+  setTimeout(hideDocs, 3000);
 });
 </script>`;
     const newTags = `<title>Zed</title>\n    <link rel="icon" type="image/svg+xml" href="${ZED_DATA_URI}">\n    <link rel="alternate icon" type="image/png" href="/favicon.ico">\n    <link rel="apple-touch-icon" href="${ZED_DATA_URI}">\n    ${CUSTOM_HIDE_CSS}\n    ${hideDocsScript}`;
