@@ -11,3 +11,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+.env.render.example
+.env.render.a
+.env.render.b
+

@@ -1,16 +1,52 @@
 name: zed
 
 services:
+  scrapling-sidecar:
+    build: ./scrapling-sidecar
+    ports:
+      - "8001:8000"
+    environment:
+      SCRAPLING_MAX_CONCURRENCY: 5
+      SCRAPLING_SERVICE_TOKEN: local-dev-token
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gmaps-scraper:
+    image: gosom/google-maps-scraper:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - gmaps-data:/gmapsdata
+      - gmaps-playwright-cache:/opt
+    command: ["-data-folder", "/gmapsdata", "-addr", ":8080"]
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 2s
+      retries: 2
+
   server:
     image: twentycrm/twenty:${TAG:-latest}
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
       - ./branding/patch-branding.sh:/app/patch-branding.sh:ro
+      - ./lead_scraper_service.js:/app/packages/twenty-server/dist/lead_scraper_service.js
+      - ./lead_finder_ui.js:/app/packages/twenty-server/dist/front/lead_finder_ui.js
+      - ./lead_scraper_providers:/app/packages/twenty-server/dist/lead_scraper_providers:ro
     ports:
       - "${PORT:-3000}:3000"
     entrypoint: ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
     environment:
       NODE_PORT: 3000
+      SCRAPLING_URL: http://scrapling-sidecar:8000
+      SCRAPLING_SERVICE_TOKEN: local-dev-token
+      GOSOM_URL: http://gmaps-scraper:8080
+      GOSOM_ENABLED: "true"
       PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
@@ -78,7 +114,7 @@ services:
       EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT}
       EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
       EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
-      AGENCY_POLL_MS: "60000"
+      AGENCY_POLL_MS: "10000"
       SERVER_URL: ${SERVER_URL}
     depends_on:
       db:
@@ -165,3 +201,5 @@ services:
 volumes:
   db-data:
   server-local-data:
+  gmaps-data:
+  gmaps-playwright-cache:

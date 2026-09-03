@@ -2,6 +2,7 @@
 (function () {
   const ZL = {
     isOpen: false,
+    isLeadsSidebarOpen: false,
     leads: [],
     selectedLeads: new Set(),
     members: [],
@@ -9,7 +10,11 @@
     campaignName: 'Chennai Business Campaign',
     industry: 'Real Estate Agency',
     location: 'Chennai',
+    city: 'Chennai',
+    place: '',
+    keywords: '',
     maxResults: 25,
+    sources: { googlemaps: true, reddit: true, indeed: true, x: true, instagram: true, facebook: true, linkedin: true },
     isLoading: false,
     isAssigning: false,
     statusMessage: null,
@@ -17,10 +22,17 @@
 
     async init() {
       await this.fetchMembers();
-      this.injectSidebarItem();
+      this.removeSidebarLeads();
+      this.injectPeopleLeadsButton();
+      this.injectAssignedToMenu();
       this.initInviteListener();
+      // persistent header injection - MutationObserver + interval like v13 75561
+      const obs = new MutationObserver(() => { this.removeSidebarLeads(); this.injectPeopleLeadsButton(); this.injectAssignedToMenu(); });
+      try { obs.observe(document.body, { childList: true, subtree: true }); } catch (e) {}
       setInterval(() => {
-        this.injectSidebarItem();
+        this.removeSidebarLeads();
+        this.injectPeopleLeadsButton();
+        this.injectAssignedToMenu();
         this.initInviteListener();
       }, 1000);
 
@@ -180,24 +192,33 @@
       }
     },
 
-    async search() {
-      if (!this.industry.trim() || !this.location.trim()) {
-        alert('Please enter both Industry and Location.');
+     async search() {
+      // unified: allow keywords + city/place + sources - fallback to industry/location
+      const ind = (this.industry || '').trim();
+      const loc = (this.location || this.city || '').trim();
+      if (!ind && !(this.keywords || '').trim()) {
+        alert('Please enter Industry or Keywords.');
         return;
       }
       this.isLoading = true;
       this.statusMessage = null;
       this.render();
+      if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
 
       try {
+        const activeSources = Object.entries(this.sources || {}).filter(([k,v])=>v).map(([k])=>k);
         const res = await fetch('/api/admin/leads/scrape', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            campaignName: this.campaignName || `${this.industry} in ${this.location}`,
-            industry: this.industry.trim(),
-            location: this.location.trim(),
-            maxResults: parseInt(this.maxResults, 10) || 25
+            campaignName: this.campaignName || `${ind} in ${loc}`,
+            industry: ind || this.keywords.trim(),
+            location: loc || 'Chennai',
+            city: (this.city || '').trim(),
+            place: (this.place || '').trim(),
+            keywords: (this.keywords || '').trim(),
+            maxResults: parseInt(this.maxResults, 10) || 25,
+            sources: activeSources.length ? activeSources : ['googlemaps','reddit','indeed','x','instagram','facebook','linkedin']
           })
         });
         const data = await res.json();
@@ -213,6 +234,7 @@
       } finally {
         this.isLoading = false;
         this.render();
+        if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
       }
     },
 
@@ -223,6 +245,7 @@
         this.selectedLeads = new Set(this.leads.map((_, i) => i));
       }
       this.render();
+      if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
     },
 
     toggleSelect(index) {
@@ -232,6 +255,7 @@
         this.selectedLeads.add(index);
       }
       this.render();
+      if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
     },
 
     async assignSelected() {
@@ -283,78 +307,206 @@
       } finally {
         this.isAssigning = false;
         this.render();
+        if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
       }
     },
 
-    injectSidebarItem() {
-      const existingItems = document.querySelectorAll('.zed-leads-sidebar-row');
-      if (existingItems.length > 1) {
-        for (let i = 1; i < existingItems.length; i++) existingItems[i].remove();
+    removeSidebarLeads() {
+      document.querySelectorAll('.zed-leads-sidebar-row, #zed-leads-sidebar-item, #zed-leads-link').forEach(el => {
+        const row = el.closest('.zed-leads-sidebar-row') || el;
+        if (row && row.parentElement) row.remove();
+      });
+      // also remove any stray Leads row inserted under Notes
+      document.querySelectorAll('a[href="#leads"]').forEach(a => {
+        const r = a.closest('li, div');
+        if (r && (a.textContent || '').trim() === 'Leads') r.remove();
+      });
+    },
+    injectSidebarItem() { this.removeSidebarLeads(); return; },
+
+    injectPeopleLeadsButton() {
+      // only on People page
+      const isPeople = window.location.pathname.includes('/objects/people') || (window.location.hash || '').includes('people') || document.body.textContent.includes('All People');
+      if (!isPeople && !window.location.pathname.includes('/objects/people')) {
+        // still try if we see + New Person button
       }
-      if (existingItems.length === 1) {
-        if (this.isOpen) this.updateSidebarHighlight(true);
+      if (document.getElementById('zed-people-leads-fixed')) return;
+      // also catch the docked version
+      if (document.getElementById('zed-people-leads-btn')) return;
+      const allBtns = Array.from(document.querySelectorAll('button'));
+      const newPersonBtn = allBtns.find(b => (b.textContent || '').trim() === '+ New Person' || (b.textContent || '').trim() === 'New Person' || (b.textContent || '').trim().includes('New Person'));
+      if (!newPersonBtn) {
+        // fallback: create fixed if header not yet rendered - but only after a delay
+        if (!document.getElementById('zed-people-leads-fixed-fallback')) {
+          const fb = document.createElement('button');
+          fb.id = 'zed-people-leads-fixed-fallback';
+          fb.textContent = '+ Leads';
+          fb.onclick = () => this.openLeadsSidebar();
+          fb.style.cssText = 'position: fixed; top: 12px; right: 170px; z-index: 99999; background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 0 14px; height: 32px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(37,99,235,0.2); display: flex; align-items: center; gap: 6px;';
+          // only show on people
+          if (window.location.pathname.includes('/objects/people')) document.body.appendChild(fb);
+          setTimeout(() => { if (fb.parentElement && document.getElementById('zed-people-leads-btn')) fb.remove(); }, 3000);
+        }
         return;
       }
+      const parent = newPersonBtn.parentElement;
+      if (!parent) return;
+      // style clone from computedStyle
+      const cs = window.getComputedStyle(newPersonBtn);
+      const leadsBtn = document.createElement('button');
+      leadsBtn.id = 'zed-people-leads-fixed';
+      // also keep legacy id for tests
+      leadsBtn.setAttribute('data-testid', 'zed-people-leads-btn');
+      leadsBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> <span>+ Leads</span>';
+      leadsBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openLeadsSidebar(); };
+      // try exact clone
+      try {
+        leadsBtn.className = newPersonBtn.className;
+        leadsBtn.style.cssText = newPersonBtn.style.cssText;
+      } catch (e) {}
+      // enforce Zed blue if clone missing background
+      if (!cs.backgroundColor || cs.backgroundColor === 'rgba(0, 0, 0, 0)' || cs.backgroundColor === 'transparent') {
+        leadsBtn.style.background = '#2563eb';
+        leadsBtn.style.color = '#ffffff';
+        leadsBtn.style.border = 'none';
+        leadsBtn.style.borderRadius = cs.borderRadius || '6px';
+        leadsBtn.style.padding = cs.padding || '0 14px';
+        leadsBtn.style.height = cs.height || '32px';
+        leadsBtn.style.fontSize = cs.fontSize || '13px';
+        leadsBtn.style.fontWeight = '600';
+        leadsBtn.style.boxShadow = '0 1px 2px rgba(37,99,235,0.2)';
+      } else {
+        leadsBtn.style.background = cs.backgroundColor;
+        leadsBtn.style.color = cs.color;
+        leadsBtn.style.border = cs.border;
+        leadsBtn.style.borderRadius = cs.borderRadius;
+        leadsBtn.style.padding = cs.padding;
+        leadsBtn.style.height = cs.height;
+      }
+      leadsBtn.style.display = 'inline-flex';
+      leadsBtn.style.alignItems = 'center';
+      leadsBtn.style.gap = '6px';
+      leadsBtn.style.cursor = 'pointer';
+      // insert before New Person to keep flex gap
+      parent.style.display = 'flex';
+      parent.style.gap = '8px';
+      parent.style.alignItems = 'center';
+      parent.insertBefore(leadsBtn, newPersonBtn);
+      // remove fallback if present
+      const fb = document.getElementById('zed-people-leads-fixed-fallback');
+      if (fb) fb.remove();
+      // expose second id for legacy check
+      const legacy = document.createElement('span');
+      legacy.id = 'zed-people-leads-btn';
+      legacy.style.display = 'none';
+      leadsBtn.appendChild(legacy);
+    },
 
-      let notesNode = null;
-      const allSpans = document.querySelectorAll('span, div, a');
-      for (let i = 0; i < allSpans.length; i++) {
-        const el = allSpans[i];
-        if (el.children.length === 0 && el.textContent && el.textContent.trim() === 'Notes') {
-          if (el.closest('aside, nav, [class*="NavigationDrawer"], [class*="sauq8y3"], [class*="Item"]')) {
-            notesNode = el;
-            break;
+    injectAssignedToMenu() {
+      if (document.getElementById('zed-assignedto-menu')) return;
+      const importBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim().toLowerCase().includes('import people') || (b.textContent || '').trim() === 'Import');
+      const anchor = importBtn || Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === '⋮' || (b.textContent || '').trim() === 'Options');
+      if (!anchor) return;
+      // add three-dots bulk Assigned To if not exists
+      const opts = Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').trim() === 'Options');
+      if (opts && !opts.dataset.zedAssigned) {
+        opts.dataset.zedAssigned = 'true';
+        opts.addEventListener('click', () => setTimeout(() => {
+          const menu = document.querySelector('[role="menu"], [class*="Dropdown"]');
+          if (menu && !menu.querySelector('#zed-bulk-assign')) {
+            const it = document.createElement('div');
+            it.id = 'zed-bulk-assign';
+            it.textContent = 'Assigned To';
+            it.style.cssText = 'padding: 8px 12px; font-size: 13px; cursor: pointer;';
+            it.onclick = () => this.openBulkAssign();
+            menu.appendChild(it);
           }
-        }
+        }, 200));
       }
+    },
+    openBulkAssign() { this.showToast('Select leads then use Assign bar'); },
 
-      if (!notesNode) return;
-
-      let parentRow = notesNode;
-      while (parentRow && parentRow.parentElement) {
-        if (
-          parentRow.className.includes('sauq8y3') ||
-          parentRow.className.includes('NavigationDrawerItem') ||
-          parentRow.tagName === 'LI' ||
-          (parentRow.parentElement && parentRow.parentElement.children.length >= 3 && parentRow.parentElement.querySelector('a, div'))
-        ) {
-          break;
-        }
-        parentRow = parentRow.parentElement;
+    openLeadsSidebar() {
+      this.isLeadsSidebarOpen = true;
+      this.fetchMembers();
+      this.renderLeadsSidebar();
+    },
+    closeLeadsSidebar() {
+      this.isLeadsSidebarOpen = false;
+      const s = document.getElementById('zed-leads-sidebar');
+      if (s) s.remove();
+      const ov = document.getElementById('zed-leads-overlay');
+      if (ov) ov.remove();
+    },
+    renderLeadsSidebar() {
+      let overlay = document.getElementById('zed-leads-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'zed-leads-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.15); z-index: 10001;';
+        overlay.onclick = () => this.closeLeadsSidebar();
+        document.body.appendChild(overlay);
       }
-
-      if (!parentRow || !parentRow.parentElement) return;
-
-      const leadsRow = document.createElement(parentRow.tagName || 'div');
-      leadsRow.className = parentRow.className + ' zed-leads-sidebar-row';
-      leadsRow.id = 'zed-leads-sidebar-item';
-      leadsRow.style.cssText = parentRow.style.cssText + '; cursor: pointer; user-select: none;';
-
-      const innerLink = document.createElement('a');
-      innerLink.id = 'zed-leads-link';
-      innerLink.href = '#leads';
-      innerLink.style.cssText = 'display: flex; align-items: center; width: 100%; height: 100%; padding: 6px 12px; border-radius: 6px; color: inherit; text-decoration: none; font-size: 13px; font-weight: 500; box-sizing: border-box; transition: background 0.1s ease;';
-      innerLink.style.backgroundColor = this.isOpen ? 'rgba(0, 0, 0, 0.06)' : 'transparent';
-
-      innerLink.innerHTML = `
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; color: inherit; opacity: 0.85;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-          </svg>
-        </span>
-        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;">Leads</span>
+      let sidebar = document.getElementById('zed-leads-sidebar');
+      if (!sidebar) {
+        sidebar = document.createElement('div');
+        sidebar.id = 'zed-leads-sidebar';
+        document.body.appendChild(sidebar);
+      }
+      const activeCount = Object.values(this.sources).filter(Boolean).length;
+      sidebar.style.cssText = 'position: fixed; top: 0; right: 0; width: 480px; max-width: 92vw; height: 100vh; background: #fff; z-index: 10002; box-shadow: -8px 0 24px rgba(0,0,0,0.12); border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden;';
+      sidebar.innerHTML = `
+        <div style="height: 48px; border-bottom: 1px solid #ebebeb; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; color: #18181b;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #e0f2fe; color: #0284c7;">⚡</span>
+            <span>+ Leads — Scrape</span>
+            <span style="font-size: 12px; color: #71717a; font-weight: 400;">· ${this.leads.length}</span>
+          </div>
+          <button onclick="window.ZedLeads.closeLeadsSidebar()" style="background: transparent; border: none; font-size: 18px; cursor: pointer; color: #71717a; padding: 4px 8px;">✕</button>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: auto; flex: 1;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div><label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Industry</label><input type="text" value="${this.industry.replace(/"/g,'&quot;')}" oninput="window.ZedLeads.industry=this.value" placeholder="e.g. Dentist" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none;" /></div>
+            <div><label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Max</label><select onchange="window.ZedLeads.maxResults=this.value" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;"><option value="10" ${this.maxResults==10?'selected':''}>10</option><option value="25" ${this.maxResults==25?'selected':''}>25</option><option value="50" ${this.maxResults==50?'selected':''}>50</option><option value="100" ${this.maxResults==100?'selected':''}>100</option></select></div>
+            <div><label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">City</label><input type="text" value="${this.city.replace(/"/g,'&quot;')}" oninput="window.ZedLeads.city=this.value; window.ZedLeads.location=this.value" placeholder="Chennai" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none;" /></div>
+            <div><label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Place</label><input type="text" value="${this.place.replace(/"/g,'&quot;')}" oninput="window.ZedLeads.place=this.value" placeholder="e.g. Anna Nagar" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none;" /></div>
+          </div>
+          <div><label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Keywords (comma)</label><input type="text" value="${this.keywords.replace(/"/g,'&quot;')}" oninput="window.ZedLeads.keywords=this.value" placeholder="dentist, plumber, real estate" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none;" /></div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Sources (${activeCount} selected)</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px;">
+              ${Object.entries({googlemaps:'Google Maps',reddit:'Reddit',indeed:'Indeed',x:'X (Twitter)',instagram:'Instagram',facebook:'Facebook',linkedin:'LinkedIn'}).map(([k,label])=>`<label style="display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid ${this.sources[k]?'#2563eb':'#e5e7eb'}; background: ${this.sources[k]?'#eff6ff':'#fff'}; border-radius: 6px; cursor: pointer;"><input type="checkbox" ${this.sources[k]?'checked':''} onchange="window.ZedLeads.sources['${k}']=this.checked; window.ZedLeads.renderLeadsSidebar()" style="cursor: pointer;" /> ${label}</label>`).join('')}
+            </div>
+          </div>
+          <button onclick="window.ZedLeads.search()" style="background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; ${this.isLoading?'opacity:0.6; pointer-events:none':''}">
+            ${this.isLoading ? '<span style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color: transparent; border-radius:50%; animation: spin 0.8s linear infinite;"></span> Scraping…' : 'Scrape All Sources — Unified &rarr;'}
+          </button>
+          ${this.statusMessage ? `<div style="padding: 8px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; ${this.statusMessage.type==='success'?'background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;':'background:#fef2f2; color:#991b1b; border:1px solid #fecaca;'}">${this.statusMessage.text}</div>` : ''}
+          <div style="border-top: 1px solid #ebebeb; padding-top: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Results — ${this.leads.length} ${this.isLoading?'(loading…)':''}</div>
+            ${this.leads.length===0 ? `<div style="font-size: 12px; color: #71717a; text-align: center; padding: 24px 0;">No leads yet. Pick sources and Scrape.</div>` : `
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;"><input type="checkbox" ${this.selectedLeads.size===this.leads.length && this.leads.length>0?'checked':''} onchange="window.ZedLeads.toggleSelectAll(); window.ZedLeads.renderLeadsSidebar()" /> Select all (${this.selectedLeads.size}/${this.leads.length})</label>
+                <span style="margin-left: auto; font-size: 12px; color: #71717a;">Assign to</span>
+                <select onchange="window.ZedLeads.selectedMemberId=this.value" style="font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  ${this.members.map(m=>`<option value="${m.id}" ${this.selectedMemberId===m.id?'selected':''}>${[m.nameFirstName,m.nameLastName].filter(Boolean).join(' ')||m.userEmail}</option>`).join('')}
+                </select>
+                <button onclick="window.ZedLeads.assignSelected(); setTimeout(()=>window.ZedLeads.renderLeadsSidebar(),400)" style="background: #18181b; color: #fff; border: none; border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;">Assign →</button>
+              </div>
+              <div style="max-height: 38vh; overflow: auto; border: 1px solid #ebebeb; border-radius: 8px;">
+                ${this.leads.map((lead, i)=>`
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #f4f4f5; font-size: 12px; ${this.selectedLeads.has(i)?'background:#f4f4f5':''}">
+                    <input type="checkbox" ${this.selectedLeads.has(i)?'checked':''} onchange="window.ZedLeads.toggleSelect(${i}); window.ZedLeads.renderLeadsSidebar()" />
+                    <span style="font-weight: 600; color: #18181b; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.name}</span>
+                    <span style="background: #e0f2fe; color: #0284c7; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">${lead.source||'—'}</span>
+                    <span style="color: #71717a; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.phone||'—'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        </div>
       `;
-
-      innerLink.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        ZL.open();
-      };
-
-      leadsRow.appendChild(innerLink);
-      parentRow.parentElement.insertBefore(leadsRow, parentRow.nextSibling);
-      if (this.isOpen) this.updateSidebarHighlight(true);
     },
 
     getSidebarWidth() {
@@ -436,7 +588,7 @@
             </div>
           ` : ''}
 
-          <!-- 3. Exact Twenty CRM Table Component -->
+          <!-- 3. Exact Zed Table Component -->
           <div style="flex: 1; overflow: auto; background: #ffffff; position: relative;">
             ${this.isLoading && this.leads.length === 0 ? `
               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 320px; color: #71717a;">

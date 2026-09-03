@@ -823,8 +823,15 @@ if (fs.existsSync(mainFile)) {
         app.use('/api/admin/leads/scrape', async (req, res) => {
             if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
             try {
-                const { industry, location, maxResults } = req.body || {};
-                const leads = await leadScraperService.scrapeBusinessLeads({ industry, location, maxResults: Number(maxResults) || 25 });
+                const { industry, location, city, place, maxResults, sources, keywords } = req.body || {};
+                const loc = location || [city, place].filter(Boolean).join(', ');
+                let leads, perSourceCounts={}, errors={};
+                if (sources && typeof sources==='object' && Object.keys(sources).length) {
+                    const unified = await (leadScraperService.scrapeUnified ? leadScraperService.scrapeUnified({ industry, location: loc, city, place, keywords, maxResults: Number(maxResults)||25, sources }) : { leads: await leadScraperService.scrapeBusinessLeads({ industry, location: loc, city, place, maxResults: Number(maxResults)||25 }) });
+                    leads = unified.leads; perSourceCounts = unified.perSourceCounts||{}; errors = unified.errors||{};
+                } else {
+                    leads = await leadScraperService.scrapeBusinessLeads({ industry, location: loc, city, place, maxResults: Number(maxResults) || 25 });
+                }
                 const client = await leadScraperService.getDbClient();
                 const schema = await leadScraperService.getWorkspaceSchema(client);
                 const existingRes = await client.query(\`
@@ -879,14 +886,18 @@ if (fs.existsSync(mainFile)) {
     }
 }
 
-// 14. Inject Lead Finder UI into index.html
+// 14. Inject Lead Finder UI into index.html (cache-busted)
 const indexHtmlFile = path.join(FRONT_DIR, 'index.html');
 if (fs.existsSync(indexHtmlFile)) {
     let htmlContent = fs.readFileSync(indexHtmlFile, 'utf8');
-    if (!htmlContent.includes('/lead_finder_ui.js')) {
-        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js"></script>\n</head>');
+    // Remove old injection and add versioned one to bust cache
+    htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
+    // Always ensure v14 is present (bump to force reload after header +Leads drawer rewrite 51988)
+    htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
+    if (!htmlContent.includes('/lead_finder_ui.js?v=14')) {
+        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=14"></script>\n</head>');
         fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
-        console.log('[Zed] Injected Lead Finder UI script into index.html!');
+        console.log('[Zed] Injected Lead Finder UI script v14 into index.html!');
     }
 }
 

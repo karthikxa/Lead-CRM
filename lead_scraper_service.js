@@ -33,8 +33,9 @@ async function fetchJson(url, options = {}) {
   });
 }
 
-async function scrapeBusinessLeads({ industry, location, maxResults = 25 }) {
-  const query = `${industry} in ${location}`;
+async function scrapeBusinessLeads({ industry, location, city, place, maxResults = 25 }) {
+  const loc = location || [city, place].filter(Boolean).join(', ') || city || place || '';
+  const query = `${industry} in ${loc}`;
   const leads = [];
   const seen = new Set();
 
@@ -51,7 +52,7 @@ async function scrapeBusinessLeads({ industry, location, maxResults = 25 }) {
 
         const addr = item.address || {};
         const street = [addr.house_number, addr.road || addr.street].filter(Boolean).join(' ') || item.display_name?.split(',').slice(1, 3).join(',').trim();
-        const city = addr.city || addr.town || addr.village || addr.suburb || location.split(',')[0].trim();
+        const city = addr.city || addr.town || addr.village || addr.suburb || (loc || '').split(',')[0].trim() || city || '';
         const state = addr.state || '';
         const country = addr.country || '';
         const postcode = addr.postcode || '';
@@ -65,7 +66,7 @@ async function scrapeBusinessLeads({ industry, location, maxResults = 25 }) {
           website: website || '',
           email: '',
           street: street || '',
-          city: city || location,
+          city: city || loc || location || '',
           state: state || '',
           country: country || '',
           postcode: postcode || '',
@@ -95,6 +96,8 @@ async function scrapeBusinessLeads({ industry, location, maxResults = 25 }) {
       seen.add(genName.toLowerCase());
 
       const slug = genName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const effCity = city || (loc || '').split(',')[0].trim() || 'Chennai';
+      const effState = place || (loc || '').split(',')[1]?.trim() || '';
       leads.push({
         name: genName,
         industry: industry,
@@ -102,8 +105,8 @@ async function scrapeBusinessLeads({ industry, location, maxResults = 25 }) {
         website: `https://www.${slug}.com`,
         email: `contact@${slug}.com`,
         street: `${Math.floor(100 + Math.random() * 900)} Main Avenue`,
-        city: location.split(',')[0].trim(),
-        state: location.split(',')[1]?.trim() || '',
+        city: effCity,
+        state: effState,
         country: '',
         postcode: `${Math.floor(10000 + Math.random() * 89999)}`,
         lat: null,
@@ -163,6 +166,16 @@ async function assignLeadsToMember({ leads, memberId, campaignName }) {
       }
     }
 
+    // Detect optional person columns for ordered CRM insertion
+    const personColsRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='person'`, [schema]);
+    const personCols = new Set(personColsRes.rows.map(r=>r.column_name));
+    const hasLeadStatus = personCols.has('leadStatus');
+    const hasAssignedTo = personCols.has('assignedToId');
+    const hasAssignedBy = personCols.has('assignedById');
+    const hasDueDate = personCols.has('dueDate');
+    const hasPosition = personCols.has('position');
+    let baseTs = Date.now();
+    let idxOrder = 0;
     for (const lead of leads) {
       const cleanName = lead.name.toLowerCase().trim();
       const cleanDomain = (lead.website || '').replace(/https?:\/\//, '').replace(/\/.*$/, '').toLowerCase().trim();
@@ -178,10 +191,16 @@ async function assignLeadsToMember({ leads, memberId, campaignName }) {
         continue;
       }
 
+      // Ordered insertion: each lead gets incrementing timestamp/position to preserve list order
+      const orderOffset = idxOrder * 1000;
+      const nowDate = new Date(baseTs + orderOffset);
+      const now = nowDate.toISOString();
+      const dueDate = new Date(baseTs + orderOffset + 5*24*3600*1000).toISOString();
+      const position = baseTs + orderOffset;
+      idxOrder++;
+
       // Insert new company
       const companyId = uuidv4();
-      const now = new Date().toISOString();
-      const position = Date.now();
 
       await client.query(`
         INSERT INTO "${schema}"."company" (
@@ -195,23 +214,22 @@ async function assignLeadsToMember({ leads, memberId, campaignName }) {
         lead.lat || null, lead.lng || null, memberId || null, position
       ]);
 
-      // Insert primary person/lead contact
+      // Insert primary person/lead contact with CRM defaults (New, assigned, dueDate 5d, ordered position)
       const personId = uuidv4();
       const nameParts = lead.name.split(' ');
       const firstName = nameParts[0] || lead.name;
       const lastName = nameParts.slice(1).join(' ') || 'Manager';
 
-      await client.query(`
-        INSERT INTO "${schema}"."person" (
-          id, "createdAt", "updatedAt", "nameFirstName", "nameLastName",
-          "emailsPrimaryEmail", "phonesPrimaryPhoneNumber", "jobTitle",
-          "companyId", position, "createdBySource"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'MANUAL');
-      `, [
-        personId, now, now, firstName, lastName,
-        lead.email || null, lead.phone || null, lead.industry || 'Owner',
-        companyId, position
-      ]);
+      // Build dynamic insert for optional columns
+      const cols = ['id','"createdAt"','"updatedAt"','"nameFirstName"','"nameLastName"','"emailsPrimaryEmail"','"phonesPrimaryPhoneNumber"','"jobTitle"','"companyId"','position','"createdBySource"'];
+      const vals = [personId, now, now, firstName, lastName, lead.email || null, lead.phone || null, lead.industry || 'Owner', companyId, position, 'MANUAL'];
+      const placeholders = cols.map((_,i)=>`$${i+1}`);
+      let pIdx = vals.length;
+      if (hasLeadStatus) { cols.push('"leadStatus"'); vals.push('New'); placeholders.push(`$${++pIdx}`); }
+      if (hasAssignedTo) { cols.push('"assignedToId"'); vals.push(memberId || null); placeholders.push(`$${++pIdx}`); }
+      if (hasAssignedBy) { cols.push('"assignedById"'); vals.push(memberId || null); placeholders.push(`$${++pIdx}`); }
+      if (hasDueDate) { cols.push('"dueDate"'); vals.push(dueDate); placeholders.push(`$${++pIdx}`); }
+      await client.query(`INSERT INTO "${schema}"."person" (${cols.join(', ')}) VALUES (${placeholders.join(', ')})`, vals);
 
       // Record in seen map to prevent intra-batch duplicates
       existingMap.set(cleanName, { name: lead.name, accountOwnerId: memberId });
@@ -232,8 +250,25 @@ async function assignLeadsToMember({ leads, memberId, campaignName }) {
   };
 }
 
+// Unified self-hosted scrape via providers (Scrapling + Nominatim + snscrape)
+let _providers = null;
+function getProviders() {
+  if (!_providers) {
+    try { _providers = require('./lead_scraper_providers'); } catch { _providers = { providers: {}, scrapeUnified: async () => ({ leads: [] }) }; }
+  }
+  return _providers;
+}
+async function scrapeUnified(opts) {
+  const p = getProviders();
+  if (p.scrapeUnified) return p.scrapeUnified(opts);
+  // Fallback to single google maps
+  const leads = await scrapeBusinessLeads(opts);
+  return { leads, perSourceCounts: { googlemaps: leads.length }, errors: {} };
+}
+
 module.exports = {
   scrapeBusinessLeads,
+  scrapeUnified,
   assignLeadsToMember,
   getDbClient,
   getWorkspaceSchema

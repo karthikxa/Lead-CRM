@@ -1,0 +1,98 @@
+services:
+  # Account A — Zed UI (512MB Free) — single service runs server+front+cron, DB/Redis external
+  - type: web
+    name: zed
+    env: docker
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    plan: free
+    region: singapore # closest to Chennai, also us-east-2 available for your Neon S3 us-east-2 — pick one
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=256 --max-semi-space-size=8
+      - key: NODE_PORT
+        value: 10000
+      - key: PORT
+        value: 10000
+      # Neon Postgres (external, not Render Postgres — avoids 30-day wipe, fits free hours)
+      - key: PG_DATABASE_URL
+        sync: false # set in Render dashboard: postgres://user:pass@ep-...neon.tech/neondb?sslmode=require
+      # Upstash Redis 25MB free (external)
+      - key: REDIS_URL
+        sync: false
+      - key: SERVER_URL
+        sync: false # https://zed.onrender.com
+      - key: APP_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      # Neon S3 — S3-compatible storage for file uploads (ephemeral local → persistent)
+      - key: STORAGE_TYPE
+        value: s3
+      - key: STORAGE_S3_ENDPOINT
+        value: https://br-red-cell-aeg4aj1h.storage.c-2.us-east-2.aws.neon.tech
+      - key: STORAGE_S3_REGION
+        value: us-east-2
+      - key: STORAGE_S3_NAME
+        value: zed-storage # create bucket zed-storage in Neon Storage first
+      - key: STORAGE_S3_ACCESS_KEY_ID
+        sync: false # nak_live_... — set in dashboard, not git
+      - key: STORAGE_S3_SECRET_ACCESS_KEY
+        sync: false # nsk_live_... — set in dashboard
+      # AI Gateway (Neon)
+      - key: OPENAI_API_KEY
+        sync: false # nt_live_... — set in dashboard
+      - key: OPENAI_BASE_URL
+        value: https://server-llm-1.onrender.com/v1
+      - key: LLM_GATEWAY_BASE_URL
+        value: https://server-llm-1.onrender.com/v1
+      - key: OPENAI_API_URL
+        value: https://server-llm-1.onrender.com/v1
+      # Gosom scraper — points to Account B service
+      - key: GOSOM_URL
+        sync: false # https://gmaps-scraper.onrender.com
+      - key: GOSOM_ENABLED
+        value: true
+      # Auth
+      - key: AUTH_GOOGLE_ENABLED
+        value: true
+      - key: AUTH_GOOGLE_CLIENT_ID
+        sync: false
+      - key: AUTH_GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: AUTH_GOOGLE_CALLBACK_URL
+        sync: false
+      - key: AUTH_GOOGLE_APIS_CALLBACK_URL
+        sync: false
+      - key: EMAIL_FROM_ADDRESS
+        sync: false
+      - key: EMAIL_DRIVER
+        value: smtp
+      - key: EMAIL_SMTP_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_SMTP_PORT
+        value: 465
+      - key: EMAIL_SMTP_USER
+        sync: false
+      - key: EMAIL_SMTP_PASSWORD
+        sync: false
+      - key: IS_MULTI_WORKSPACE_ENABLED
+        value: false
+
+  # Account B — Gosom Scraper (512MB Free, on-demand — any place)
+  # Deploy this service in your SECOND Render account (rnd_VNEP...) to keep 750hrs/account under limit
+  # Or deploy both in same account and set zed to always-on, gmaps-scraper to scale on POST only
+  - type: web
+    name: gmaps-scraper
+    env: docker
+    image:
+      url: gosom/google-maps-scraper:latest
+    plan: free
+    region: singapore
+    dockerCommand: -data-folder /gmapsdata -addr 0.0.0.0:$PORT
+    healthCheckPath: /api/v1/jobs
+    envVars:
+      - key: PORT
+        value: 10000
