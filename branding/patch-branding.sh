@@ -824,6 +824,9 @@ try {
             res.end('Zed CRM starting...');
         }
     });
+    _earlyServer.on('error', (_err) => {
+        console.warn('[Zed] Early server warning:', _err.message);
+    });
     _earlyServer.listen(_earlyPort, '0.0.0.0', () => {
         console.log('[Zed] Immediate early port bound on ' + _earlyPort + ' — Render port scanner will detect service in <100ms');
     });
