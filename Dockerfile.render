@@ -1,8 +1,8 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: limit heap to 280MB (leaves ~230MB for OS/native/PG client overhead)
-ENV NODE_OPTIONS="--max-old-space-size=280"
+# 512MB Render Free: limit heap to 350MB (leaves ~162MB for native/OS overhead)
+ENV NODE_OPTIONS="--max-old-space-size=350"
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
@@ -18,4 +18,4 @@ COPY lead_scraper_providers /app/packages/twenty-server/dist/lead_scraper_provid
 
 # Render expects PORT env, Twenty uses NODE_PORT
 EXPOSE 3000
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --optimize_for_size dist/main"]
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
