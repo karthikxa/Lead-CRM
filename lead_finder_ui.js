@@ -310,6 +310,55 @@
         if (this.isLeadsSidebarOpen) this.renderLeadsSidebar();
       }
     },
+    importCsv(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          let leads = [];
+          if (file.name.endsWith('.json')) {
+            const data = JSON.parse(text);
+            const arr = Array.isArray(data) ? data : [data];
+            leads = arr.map(item => ({
+              name: item.title || item.name || item.input_id || 'Unknown',
+              phone: item.phone || '',
+              website: item.website || '',
+              email: (item.emails && item.emails[0]) || '',
+              street: item.address || item.complete_address || '',
+              city: '',
+              state: '',
+              industry: item.category || 'Business',
+              source: 'Gosom Import',
+              rating: item.review_rating || '4.5',
+              reviewsCount: item.review_count || 0
+            })).filter(l=>l.name && l.name!=='Unknown');
+          } else {
+            const lines = text.split('\n').filter(l=>l.trim());
+            if (lines.length < 2) throw new Error('Empty CSV');
+            const headers = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+            const findIdx = (cands) => { for (let c of cands) { const i = headers.findIndex(h=>h.includes(c)); if (i>=0) return i; } return -1; };
+            const titleIdx = findIdx(['title','name']); const phoneIdx=findIdx(['phone']); const webIdx=findIdx(['website']); const addrIdx=findIdx(['address','complete_address']); const catIdx=findIdx(['category']); const ratingIdx=findIdx(['review_rating','rating']); const countIdx=findIdx(['review_count']);
+            for(let i=1;i<lines.length;i++){
+              const cols = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+              const clean = v=> (v||'').replace(/^"|"$/g,'').replace(/""/g,'"').trim();
+              const get = idx=> idx>=0 && idx<cols.length ? clean(cols[idx]) : '';
+              const name = get(titleIdx) || `Lead ${i}`;
+              if (!name || name.startsWith('Lead ')) continue;
+              leads.push({ name, phone: get(phoneIdx), website: get(webIdx), street: get(addrIdx), city: '', industry: get(catIdx)||'Business', source: 'Gosom Import', rating: get(ratingIdx)||'4.5', reviewsCount: get(countIdx)||0 });
+            }
+          }
+          this.leads = leads.slice(0, 100);
+          this.selectedLeads = new Set(this.leads.map((_,i)=>i));
+          this.statusMessage = {type:'success', text: `\u2713 Imported ${this.leads.length} leads from ${file.name} — ready to Assign`};
+          this.renderLeadsSidebar();
+          this.render();
+        } catch(err){ this.statusMessage={type:'error', text: 'Import failed: '+err.message}; this.renderLeadsSidebar(); }
+      };
+      reader.readAsText(file);
+      event.target.value='';
+    },
 
     removeSidebarLeads() {
       document.querySelectorAll('.zed-leads-sidebar-row, #zed-leads-sidebar-item, #zed-leads-link').forEach(el => {
@@ -481,6 +530,12 @@
           <button onclick="window.ZedLeads.search()" style="background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; ${this.isLoading?'opacity:0.6; pointer-events:none':''}">
             ${this.isLoading ? '<span style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color: transparent; border-radius:50%; animation: spin 0.8s linear infinite;"></span> Scraping…' : 'Scrape All Sources — Unified &rarr;'}
           </button>
+          <div style="display: flex; align-items: center; gap: 8px; margin: 2px 0; font-size: 12px; color: #71717a;"><span style="flex:1; height:1px; background:#e5e7eb"></span>OR<span style="flex:1; height:1px; background:#e5e7eb"></span></div>
+          <label style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; background: #f8fafc;">
+            <input type="file" accept=".csv,.json" style="display:none" onchange="window.ZedLeads.importCsv(event)">
+            <span>📄 Import CSV / JSON — Manual (from local gosom at :8080)</span>
+          </label>
+          <div style="font-size: 11px; color: #94a3b8; text-align: center;">Export from <code>http://localhost:8080</code> → Download CSV → import here → Assign</div>
           ${this.statusMessage ? `<div style="padding: 8px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; ${this.statusMessage.type==='success'?'background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;':'background:#fef2f2; color:#991b1b; border:1px solid #fecaca;'}">${this.statusMessage.text}</div>` : ''}
           <div style="border-top: 1px solid #ebebeb; padding-top: 12px;">
             <div style="font-size: 12px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Results — ${this.leads.length} ${this.isLoading?'(loading…)':''}</div>

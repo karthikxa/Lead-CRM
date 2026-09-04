@@ -892,12 +892,12 @@ if (fs.existsSync(indexHtmlFile)) {
     let htmlContent = fs.readFileSync(indexHtmlFile, 'utf8');
     // Remove old injection and add versioned one to bust cache
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    // Always ensure v14 is present (bump to force reload after header +Leads drawer rewrite 51988)
+    // Always ensure v15 is present (bump for local gosom + manual CSV import)
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    if (!htmlContent.includes('/lead_finder_ui.js?v=14')) {
-        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=14"></script>\n</head>');
+    if (!htmlContent.includes('/lead_finder_ui.js?v=15')) {
+        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=15"></script>\n</head>');
         fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
-        console.log('[Zed] Injected Lead Finder UI script v14 into index.html!');
+        console.log('[Zed] Injected Lead Finder UI script v15 into index.html!');
     }
 }
 
