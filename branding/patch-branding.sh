@@ -918,7 +918,10 @@ try {
         if (typeof _earlyServer.closeAllConnections === 'function') {
             _earlyServer.closeAllConnections();
         }
-        await new Promise((resolve) => { try { _earlyServer.close(resolve); } catch(e) { resolve(); } });
+        await new Promise((resolve) => {
+            const _t = setTimeout(resolve, 500);
+            try { _earlyServer.close(() => { clearTimeout(_t); resolve(); }); } catch(e) { clearTimeout(_t); resolve(); }
+        });
         console.log('[Zed] Handed port over to NestJS');
     }
     await app.listen(_earlyPort, '0.0.0.0');
