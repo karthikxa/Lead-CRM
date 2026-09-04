@@ -15,4 +15,6 @@ Thumbs.db
 .env.render.example
 .env.render.a
 .env.render.b
+deploy_frontend_to_vercel.js
+update_vercel_domain.js
 
