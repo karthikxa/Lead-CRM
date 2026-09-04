@@ -6,8 +6,8 @@ ENV NODE_OPTIONS=--max-old-space-size=300
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-ENV PORT=10000
-ENV NODE_PORT=10000
+ENV PORT=3000
+ENV NODE_PORT=3000
 
 USER root
 # patch-branding + providers are bind-mounted in docker-compose, but for Render we COPY them into image
