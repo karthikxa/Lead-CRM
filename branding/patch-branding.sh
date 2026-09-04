@@ -817,6 +817,19 @@ if (fs.existsSync(mainFile)) {
 const _http = require('http');
 const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
 let _earlyServer = null;
+
+// [Zed] Active GC Watchdog to keep heap safely below 280MB on 512MB Render free tier
+if (typeof global.gc === 'function') {
+    setInterval(() => {
+        try {
+            const m = process.memoryUsage();
+            if (m.heapUsed > 250 * 1024 * 1024) {
+                global.gc();
+            }
+        } catch (e) {}
+    }, 10000).unref();
+}
+
 try {
     _earlyServer = _http.createServer((req, res) => {
         res.setHeader('Connection', 'close');
@@ -929,7 +942,10 @@ try {
         console.log('[Zed] Handed port over to NestJS');
     }
     await app.listen(_earlyPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
+    console.log('[Zed] NestJS fully listening on ' + _earlyPort);
+    if (typeof global.gc === 'function') {
+        try { global.gc(); console.log('[Zed] Post-boot Garbage Collection freed heap memory!'); } catch(e){}
+    }`
     );
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
