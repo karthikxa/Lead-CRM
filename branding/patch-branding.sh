@@ -484,8 +484,8 @@ if (fs.existsSync(userResolverFile)) {
     console.log('[Zed] Patched currentUser resolver in user.resolver.js!');
 }
 
-// 7. Frontend assets patching (Only if PATCH_FRONT_ASSETS is true; skipped on Render to prevent OOM since frontend is hosted on Vercel Edge CDN)
-if (process.env.PATCH_FRONT_ASSETS === 'true') {
+// 7. Frontend assets patching — always run for Z logo (set PATCH_FRONT_ASSETS=false to skip to save RAM)
+if (process.env.PATCH_FRONT_ASSETS !== 'false') {
     function patchFrontAssets(dir) {
     if (!fs.existsSync(dir)) return;
     const files = fs.readdirSync(dir);
@@ -541,7 +541,7 @@ if (process.env.PATCH_FRONT_ASSETS === 'true') {
                 );
                 content = content.replace(
                     /UV=\(e,t\)=>e&&IHe\(e\)\?B5\[e\]:t\?bHe\(t\):B5\.FALLBACK/g,
-                    'UV=(e,t)=>t==="zed"||e==="ZED"||t==="auto"||t==="Zed"?Z_ICON:e&&IHe(e)?B5[e]:t?bHe(t):Z_ICON'
+                    'UV=(e,t)=>t==="zed"||e==="ZED"||t==="auto"||t==="default"||t==="Zed"?Z_ICON:e&&IHe(e)?B5[e]:t?bHe(t):Z_ICON'
                 );
                 modified = true;
                 console.log('[Zed] Patched AI model icons and UV in index asset:', f);
@@ -956,12 +956,12 @@ if (fs.existsSync(indexHtmlFile)) {
     let htmlContent = fs.readFileSync(indexHtmlFile, 'utf8');
     // Remove old injection and add versioned one to bust cache
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    // Always ensure v15 is present (bump for local gosom + manual CSV import)
+    // Always ensure v16 is present (bump for +Leads removal + phone filter + task status fix)
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    if (!htmlContent.includes('/lead_finder_ui.js?v=15')) {
-        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=15"></script>\n</head>');
+    if (!htmlContent.includes('/lead_finder_ui.js?v=16')) {
+        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=16"></script>\n</head>');
         fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
-        console.log('[Zed] Injected Lead Finder UI script v15 into index.html!');
+        console.log('[Zed] Injected Lead Finder UI script v16 into index.html!');
     }
 }
 
