@@ -50,10 +50,10 @@ services:
         value: https://server-llm-1.onrender.com/v1
       - key: OPENAI_API_URL
         value: https://server-llm-1.onrender.com/v1
-      # Gosom scraper — disabled for single-Render 512MB (use lightweight Nominatim fallback any-place)
-      # For any-place real Google data, keep second Render account gmaps-scraper or use Places API
+      # Gosom scraper — LOCAL ONLY (you run gosom at http://localhost:8080)
+      # Cloud single-Render has no gosom — +Leads does manual CSV import, scraper stays local for any-place real Google data
       - key: GOSOM_URL
-        sync: false # https://gmaps-scraper.onrender.com (leave empty for single Render)
+        value: "" # local gosom not reachable from cloud, keep empty
       - key: GOSOM_ENABLED
         value: false
       # Auth
