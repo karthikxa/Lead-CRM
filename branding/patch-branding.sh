@@ -7,7 +7,7 @@ SERVER_DIR="/app/packages/twenty-server/dist"
 
 echo "[Zed] Applying Single-Domain Redirects, Direct Google Auth & Branding patch..."
 
-node --max-old-space-size=400 - << 'EOF'
+node --max-old-space-size=128 - << 'EOF'
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -484,8 +484,9 @@ if (fs.existsSync(userResolverFile)) {
     console.log('[Zed] Patched currentUser resolver in user.resolver.js!');
 }
 
-// 7. Remove "Continue with Google" on Welcome & SignInUp Screens, hide documentation menu, ensure active Enterprise UI, replace 20 logo with Z logo, and ensure high-res Logo
-function patchFrontAssets(dir) {
+// 7. Frontend assets patching (Only if PATCH_FRONT_ASSETS is true; skipped on Render to prevent OOM since frontend is hosted on Vercel Edge CDN)
+if (process.env.PATCH_FRONT_ASSETS === 'true') {
+    function patchFrontAssets(dir) {
     if (!fs.existsSync(dir)) return;
     const files = fs.readdirSync(dir);
     for (const f of files) {
@@ -559,10 +560,10 @@ function patchFrontAssets(dir) {
         }
     }
 }
-patchFrontAssets(path.join(FRONT_DIR, 'assets'));
+    patchFrontAssets(path.join(FRONT_DIR, 'assets'));
 
-// 8. Vector Favicon Data URI & SVG
-const ZED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+    // 8. Vector Favicon Data URI & SVG
+    const ZED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0B0F19"/>
@@ -797,6 +798,9 @@ for (const filePath of allFiles) {
     if (content !== orig) {
         fs.writeFileSync(filePath, content, 'utf8');
     }
+}
+} else {
+    console.log('[Zed] Skipping heavy frontend asset walk (Frontend is served by Vercel Edge CDN)');
 }
 
 // 13. Admin Lead Finder & Deduplication API Integration + Instant Early Port Binding
