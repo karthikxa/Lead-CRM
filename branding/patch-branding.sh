@@ -7,7 +7,7 @@ SERVER_DIR="/app/packages/twenty-server/dist"
 
 echo "[Zed] Applying Single-Domain Redirects, Direct Google Auth & Branding patch..."
 
-node - << 'EOF'
+node --max-old-space-size=400 - << 'EOF'
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -761,7 +761,7 @@ function walk(dir) {
     return results;
 }
 
-const allFiles = walk(SERVER_DIR);
+const allFiles = walk(FRONT_DIR);
 for (const filePath of allFiles) {
     const ext = path.extname(filePath);
     if (!['.html', '.js', '.json'].includes(ext)) continue;
