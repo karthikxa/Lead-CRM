@@ -11,7 +11,7 @@ services:
     autoDeploy: false
     envVars:
       - key: NODE_OPTIONS
-        value: --max-old-space-size=256 --max-semi-space-size=8
+        value: --max-old-space-size=300
       - key: NODE_PORT
         value: 10000
       - key: PORT
