@@ -1,8 +1,8 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: limit heap to 256MB, leave ~200MB for native + Postgres client + Redis
-ENV NODE_OPTIONS=--max-old-space-size=256 --max-semi-space-size=8
+# 512MB Render Free: limit heap to 384MB
+ENV NODE_OPTIONS=--max-old-space-size=384
 ENV NODE_ENV=production
 
 USER root
