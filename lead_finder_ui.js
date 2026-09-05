@@ -23,15 +23,16 @@
     async init() {
       await this.fetchMembers();
       this.removeSidebarLeads();
-      this.injectPeopleLeadsButton();
+      // + Leads removed per user request - no header injection
+      // this.injectPeopleLeadsButton();
       this.injectAssignedToMenu();
       this.initInviteListener();
       // persistent header injection - MutationObserver + interval like v13 75561
-      const obs = new MutationObserver(() => { this.removeSidebarLeads(); this.injectPeopleLeadsButton(); this.injectAssignedToMenu(); });
+      const obs = new MutationObserver(() => { this.removeSidebarLeads(); this.injectAssignedToMenu(); });
       try { obs.observe(document.body, { childList: true, subtree: true }); } catch (e) {}
       setInterval(() => {
         this.removeSidebarLeads();
-        this.injectPeopleLeadsButton();
+        // this.injectPeopleLeadsButton();
         this.injectAssignedToMenu();
         this.initInviteListener();
       }, 1000);
@@ -333,7 +334,7 @@
               source: 'Gosom Import',
               rating: item.review_rating || '4.5',
               reviewsCount: item.review_count || 0
-            })).filter(l=>l.name && l.name!=='Unknown');
+            })).filter(l=>l.name && l.name!=='Unknown' && l.phone && String(l.phone).trim() !== '' && String(l.phone).trim() !== '—');
           } else {
             const lines = text.split('\n').filter(l=>l.trim());
             if (lines.length < 2) throw new Error('Empty CSV');
@@ -346,12 +347,16 @@
               const get = idx=> idx>=0 && idx<cols.length ? clean(cols[idx]) : '';
               const name = get(titleIdx) || `Lead ${i}`;
               if (!name || name.startsWith('Lead ')) continue;
-              leads.push({ name, phone: get(phoneIdx), website: get(webIdx), street: get(addrIdx), city: '', industry: get(catIdx)||'Business', source: 'Gosom Import', rating: get(ratingIdx)||'4.5', reviewsCount: get(countIdx)||0 });
+              const phone = get(phoneIdx);
+              if (!phone || phone.trim() === '' || phone === '—') continue;
+              leads.push({ name, phone, website: get(webIdx), street: get(addrIdx), city: '', industry: get(catIdx)||'Business', source: 'Gosom Import', rating: get(ratingIdx)||'4.5', reviewsCount: get(countIdx)||0 });
             }
           }
+          // Filter out leads without phone as per requirement
+          leads = leads.filter(l => l.phone && String(l.phone).trim() !== '' && String(l.phone).trim() !== '—');
           this.leads = leads.slice(0, 100);
           this.selectedLeads = new Set(this.leads.map((_,i)=>i));
-          this.statusMessage = {type:'success', text: `\u2713 Imported ${this.leads.length} leads from ${file.name} — ready to Assign`};
+          this.statusMessage = {type:'success', text: `\u2713 Imported ${this.leads.length} leads from ${file.name} — ready to Assign (without phone filtered)`};
           this.renderLeadsSidebar();
           this.render();
         } catch(err){ this.statusMessage={type:'error', text: 'Import failed: '+err.message}; this.renderLeadsSidebar(); }
@@ -374,81 +379,10 @@
     injectSidebarItem() { this.removeSidebarLeads(); return; },
 
     injectPeopleLeadsButton() {
-      // only on People page
-      const isPeople = window.location.pathname.includes('/objects/people') || (window.location.hash || '').includes('people') || document.body.textContent.includes('All People');
-      if (!isPeople && !window.location.pathname.includes('/objects/people')) {
-        // still try if we see + New Person button
-      }
-      if (document.getElementById('zed-people-leads-fixed')) return;
-      // also catch the docked version
-      if (document.getElementById('zed-people-leads-btn')) return;
-      const allBtns = Array.from(document.querySelectorAll('button'));
-      const newPersonBtn = allBtns.find(b => (b.textContent || '').trim() === '+ New Person' || (b.textContent || '').trim() === 'New Person' || (b.textContent || '').trim().includes('New Person'));
-      if (!newPersonBtn) {
-        // fallback: create fixed if header not yet rendered - but only after a delay
-        if (!document.getElementById('zed-people-leads-fixed-fallback')) {
-          const fb = document.createElement('button');
-          fb.id = 'zed-people-leads-fixed-fallback';
-          fb.textContent = '+ Leads';
-          fb.onclick = () => this.openLeadsSidebar();
-          fb.style.cssText = 'position: fixed; top: 12px; right: 170px; z-index: 99999; background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 0 14px; height: 32px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(37,99,235,0.2); display: flex; align-items: center; gap: 6px;';
-          // only show on people
-          if (window.location.pathname.includes('/objects/people')) document.body.appendChild(fb);
-          setTimeout(() => { if (fb.parentElement && document.getElementById('zed-people-leads-btn')) fb.remove(); }, 3000);
-        }
-        return;
-      }
-      const parent = newPersonBtn.parentElement;
-      if (!parent) return;
-      // style clone from computedStyle
-      const cs = window.getComputedStyle(newPersonBtn);
-      const leadsBtn = document.createElement('button');
-      leadsBtn.id = 'zed-people-leads-fixed';
-      // also keep legacy id for tests
-      leadsBtn.setAttribute('data-testid', 'zed-people-leads-btn');
-      leadsBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> <span>+ Leads</span>';
-      leadsBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openLeadsSidebar(); };
-      // try exact clone
-      try {
-        leadsBtn.className = newPersonBtn.className;
-        leadsBtn.style.cssText = newPersonBtn.style.cssText;
-      } catch (e) {}
-      // enforce Zed blue if clone missing background
-      if (!cs.backgroundColor || cs.backgroundColor === 'rgba(0, 0, 0, 0)' || cs.backgroundColor === 'transparent') {
-        leadsBtn.style.background = '#2563eb';
-        leadsBtn.style.color = '#ffffff';
-        leadsBtn.style.border = 'none';
-        leadsBtn.style.borderRadius = cs.borderRadius || '6px';
-        leadsBtn.style.padding = cs.padding || '0 14px';
-        leadsBtn.style.height = cs.height || '32px';
-        leadsBtn.style.fontSize = cs.fontSize || '13px';
-        leadsBtn.style.fontWeight = '600';
-        leadsBtn.style.boxShadow = '0 1px 2px rgba(37,99,235,0.2)';
-      } else {
-        leadsBtn.style.background = cs.backgroundColor;
-        leadsBtn.style.color = cs.color;
-        leadsBtn.style.border = cs.border;
-        leadsBtn.style.borderRadius = cs.borderRadius;
-        leadsBtn.style.padding = cs.padding;
-        leadsBtn.style.height = cs.height;
-      }
-      leadsBtn.style.display = 'inline-flex';
-      leadsBtn.style.alignItems = 'center';
-      leadsBtn.style.gap = '6px';
-      leadsBtn.style.cursor = 'pointer';
-      // insert before New Person to keep flex gap
-      parent.style.display = 'flex';
-      parent.style.gap = '8px';
-      parent.style.alignItems = 'center';
-      parent.insertBefore(leadsBtn, newPersonBtn);
-      // remove fallback if present
-      const fb = document.getElementById('zed-people-leads-fixed-fallback');
-      if (fb) fb.remove();
-      // expose second id for legacy check
-      const legacy = document.createElement('span');
-      legacy.id = 'zed-people-leads-btn';
-      legacy.style.display = 'none';
-      leadsBtn.appendChild(legacy);
+      // Removed per user request: + Leads completely removed from dashboard
+      // Clean up any existing + Leads buttons
+      document.querySelectorAll('#zed-people-leads-fixed, #zed-people-leads-fixed-fallback, #zed-people-leads-btn').forEach(el=>el.remove());
+      return;
     },
 
     injectAssignedToMenu() {

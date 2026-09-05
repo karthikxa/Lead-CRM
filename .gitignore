@@ -18,3 +18,13 @@ Thumbs.db
 deploy_frontend_to_vercel.js
 update_vercel_domain.js
 
+# Files containing hardcoded credentials/secrets - never commit these
+render_envs.json
+get_gmail_token.js
+patch_gmail_api.js
+test_gmail_token.js
+set_all_render_envs.js
+apply_gmail_direct.js
+get_google_tokens.js
+set_secret_daytona.js
+

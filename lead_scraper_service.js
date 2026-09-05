@@ -118,7 +118,9 @@ async function scrapeBusinessLeads({ industry, location, city, place, maxResults
     }
   }
 
-  return leads.slice(0, maxResults);
+  // Filter out leads without phone as per requirement: dont show leads if it has no number
+  const withPhone = leads.filter(l => l.phone && String(l.phone).trim() !== '' && String(l.phone).trim() !== '—' && String(l.phone).trim() !== '-');
+  return withPhone.slice(0, maxResults);
 }
 
 // Database Lead Deduplication and Assignment Service
@@ -177,6 +179,11 @@ async function assignLeadsToMember({ leads, memberId, campaignName }) {
     let baseTs = Date.now();
     let idxOrder = 0;
     for (const lead of leads) {
+      // Skip leads without phone number as per requirement
+      if (!lead.phone || String(lead.phone).trim() === '' || String(lead.phone).trim() === '—' || String(lead.phone).trim() === '-') {
+        duplicates.push({ name: lead.name, reason: 'No phone number - skipped (dont show leads if no number)' });
+        continue;
+      }
       const cleanName = lead.name.toLowerCase().trim();
       const cleanDomain = (lead.website || '').replace(/https?:\/\//, '').replace(/\/.*$/, '').toLowerCase().trim();
 

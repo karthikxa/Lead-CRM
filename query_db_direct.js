@@ -1,0 +1,26 @@
+const { Daytona } = require('@daytona/sdk');
+
+async function checkAccounts() {
+  const daytona = new Daytona({
+    apiKey: 'dtn_6bb8efee5b7e6bbde0f74474317b91d49a5d6bf9da9b636028677a9609f192ef',
+    serverUrl: 'https://app.daytona.io/api'
+  });
+
+  const sb = await daytona.get('4d061288-0d39-4f80-a4ba-cd6c65d9598c');
+  const res = await sb.process.executeCommand(`
+    docker exec zed-server-1 node -e "
+      const { Client } = require('pg');
+      const c = new Client({ connectionString: process.env.PG_DATABASE_URL });
+      c.connect().then(async () => {
+        const r = await c.query('SELECT id, handle, provider, \"authFailedAt\" FROM core.\"connectedAccount\"');
+        console.log('Connected accounts:', r.rows);
+        const invites = await c.query('SELECT id, \"expiresAt\", context FROM core.\"appToken\" WHERE type = \\'InvitationToken\\'');
+        console.log('Pending invitations:', invites.rows);
+        await c.end();
+      }).catch(console.error);
+    "
+  `);
+  console.log('Results:\n', res.result);
+}
+
+checkAccounts().catch(console.error);

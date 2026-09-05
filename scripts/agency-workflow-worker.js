@@ -2,7 +2,7 @@
 // Agency Workflow Worker — handles status automations, emails, calendar, archive
 // Polls workspace DB every 60s, runs inside zed network (uses PG via Docker DNS)
 // Email via SMTP (zedagencyofficial@gmail.com), Calendar via DB insert + optional Google API
-// Moves: Not Attended→Task(3h), FollowUp→Task(1d), Schedule→Opportunity, Booked→Email+Calendar, Rejected→Archive
+// Moves: Not Attended→Task(3h), FollowUp→Task(1d), Schedule→Opportunity, Booked→Email+Calendar, Rejected→Keep in People (per user request, not archived)
 
 const { Client } = require('pg');
 const nodemailer = require('nodemailer');
@@ -14,7 +14,7 @@ const SMTP_PORT = parseInt(process.env.EMAIL_SMTP_PORT||'465',10);
 const SMTP_USER = process.env.EMAIL_SMTP_USER || 'zedagencyofficial@gmail.com';
 const SMTP_PASS = process.env.EMAIL_SMTP_PASSWORD || '';
 const EMAIL_TO = 'zedagencyofficial@gmail.com';
-const POLL_MS = parseInt(process.env.AGENCY_POLL_MS||'60000',10);
+const POLL_MS = parseInt(process.env.AGENCY_POLL_MS||'3000',10);
 
 let transporter = null;
 function getTransporter() {
@@ -123,15 +123,15 @@ async function handleNotAttended(pg, schema) {
       const hasCols = await pg.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='task' AND column_name IN ('emails','phones','jobTitle','companyId')`, [schema]);
       const hasMirrors = hasCols.rows.length >= 4;
       if (hasMirrors) {
-        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId", "emails", "phones", "companyId", "jobTitle") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4,$5,$6,$7,$8)`, [taskId, title, due, p.assignedToId, p.emailsPrimaryEmail||'', p.phonesPrimaryPhoneNumber||'', p.companyId, p.jobTitle||'']);
+        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId", "emails", "phones", "companyId", "jobTitle") VALUES ($1,NOW(),NOW(),$2,'Not Attended',$3,$4,$5,$6,$7,$8)`, [taskId, title, due, p.assignedToId, p.emailsPrimaryEmail||'', p.phonesPrimaryPhoneNumber||'', p.companyId, p.jobTitle||'']);
       } else {
-        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4)`, [taskId, title, due, p.assignedToId]);
+        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'Not Attended',$3,$4)`, [taskId, title, due, p.assignedToId]);
       }
       await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "targetPersonId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
       console.log(`[agency] Not Attended task ${taskId} due ${due} for ${p.id} (mirrored fields)`);
     } else {
       const task = taskExists.rows[0];
-      if (new Date(task.dueAt) < new Date() && task.status==='TODO') {
+      if (new Date(task.dueAt) < new Date() && task.status==='Not Attended') {
         // Check if person status still Not Attended and not changed in last 3h
         const ageHrs = (Date.now() - new Date(p.updatedAt).getTime())/3600000;
         if (ageHrs >= 3) {
@@ -160,15 +160,15 @@ async function handleFollowUp(pg, schema) {
       const hasCols = await pg.query(`SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name='task' AND column_name IN ('emails','phones','jobTitle','companyId')`, [schema]);
       const hasMirrors = hasCols.rows.length >= 4;
       if (hasMirrors) {
-        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId", "emails", "phones", "companyId", "jobTitle") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4,$5,$6,$7,$8)`, [taskId, title, due, p.assignedToId, p.emailsPrimaryEmail||'', p.phonesPrimaryPhoneNumber||'', p.companyId, p.jobTitle||'']);
+        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId", "emails", "phones", "companyId", "jobTitle") VALUES ($1,NOW(),NOW(),$2,'Follow Up',$3,$4,$5,$6,$7,$8)`, [taskId, title, due, p.assignedToId, p.emailsPrimaryEmail||'', p.phonesPrimaryPhoneNumber||'', p.companyId, p.jobTitle||'']);
       } else {
-        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'TODO',$3,$4)`, [taskId, title, due, p.assignedToId]);
+        await pg.query(`INSERT INTO ${schema}."task" (id, "createdAt","updatedAt", title, status, "dueAt", "assigneeId") VALUES ($1,NOW(),NOW(),$2,'Follow Up',$3,$4)`, [taskId, title, due, p.assignedToId]);
       }
       await pg.query(`INSERT INTO ${schema}."taskTarget" (id, "createdAt","updatedAt", "taskId", "targetPersonId") VALUES ($1,NOW(),NOW(),$2,$3)`, [require('crypto').randomUUID(), taskId, p.id]);
       console.log(`[agency] Follow Up task ${taskId} due ${due} for ${p.id} (mirrored)`);
     } else {
       const task = taskExists.rows[0];
-      if (new Date(task.dueAt) < new Date() && task.status==='TODO') {
+      if (new Date(task.dueAt) < new Date() && task.status==='Follow Up') {
         const ageDays = (Date.now() - new Date(p.updatedAt).getTime())/86400000;
         if (ageDays >=1) {
           console.log(`[agency] Follow Up overdue ${p.id}, keeping in people (member not followed up)`);
@@ -239,26 +239,24 @@ async function handleBooked(pg, schema) {
 }
 
 async function handleRejected(pg, schema) {
-  // Move to archive: soft delete person (set deletedAt) to avoid duplicate, keep for dedup check
-  const res = await pg.query(`SELECT id, "emailsPrimaryEmail","phonesPrimaryPhoneNumber" FROM ${schema}."person" WHERE "leadStatus"='Rejected' AND "deletedAt" IS NULL`);
-  for (const p of res.rows) {
-    await pg.query(`UPDATE ${schema}."person" SET "deletedAt"=NOW() WHERE id=$1`, [p.id]);
-    console.log(`[agency] Rejected archived ${p.id}`);
+  // Keep Rejected in People (per user request: do not remove from People)
+  const res = await pg.query(`SELECT id FROM ${schema}."person" WHERE "leadStatus"='Rejected' AND "deletedAt" IS NULL`);
+  if (res.rows.length) {
+    console.log(`[agency] Rejected kept in People ${res.rows.length} leads (not archived per user request)`);
+    // Optionally ensure dueDate not overdue? Keep as is — no deletion
   }
-  // Dedup: when new person inserted with same email/phone as archived, log warning (actual blocking could be via unique index partial, but we just log)
-  // This is handled at import time via worker check: if new person email exists in archived, skip or merge
 }
 
 async function dedupCheck(pg, schema) {
-  // Avoid new leads duplicate old archived: if a New person has same email/phone as a Rejected archived, mark or delete duplicate
+  // Avoid new leads duplicate existing Rejected (kept in People, not archived): if New has same email as Rejected, mark duplicate
   const dupRes = await pg.query(`
     SELECT n.id as new_id, o.id as old_id, n."emailsPrimaryEmail"
-    FROM ${schema}."person" n JOIN ${schema}."person" o ON o."emailsPrimaryEmail" = n."emailsPrimaryEmail" AND o."deletedAt" IS NOT NULL
-    WHERE n."deletedAt" IS NULL AND n."leadStatus"='New' AND o."leadStatus"='Rejected' AND n."emailsPrimaryEmail" IS NOT NULL AND n."emailsPrimaryEmail" != '' LIMIT 5
+    FROM ${schema}."person" n JOIN ${schema}."person" o ON o."emailsPrimaryEmail" = n."emailsPrimaryEmail" AND o."leadStatus"='Rejected' AND o."deletedAt" IS NULL
+    WHERE n."deletedAt" IS NULL AND n."leadStatus"='New' AND n."emailsPrimaryEmail" IS NOT NULL AND n."emailsPrimaryEmail" != '' AND n.id != o.id LIMIT 5
   `);
   for (const d of dupRes.rows) {
-    console.log(`[agency] dedup: new ${d.new_id} duplicate of archived ${d.old_id} email ${d.emailsPrimaryEmail} — archiving new to avoid duplicate`);
-    await pg.query(`UPDATE ${schema}."person" SET "deletedAt"=NOW(), "leadStatus"='Rejected' WHERE id=$1`, [d.new_id]);
+    console.log(`[agency] dedup: new ${d.new_id} duplicate of existing Rejected ${d.old_id} email ${d.emailsPrimaryEmail} — marking new as Rejected (kept in People)`);
+    await pg.query(`UPDATE ${schema}."person" SET "leadStatus"='Rejected' WHERE id=$1`, [d.new_id]);
   }
 }
 

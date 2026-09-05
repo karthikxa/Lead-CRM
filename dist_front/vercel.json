@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://zed-0moa.onrender.com/api/:match*"
+    },
+    {
+      "source": "/auth/:match*",
+      "destination": "https://zed-0moa.onrender.com/auth/:match*"
+    },
+    {
+      "source": "/graphql/:match*",
+      "destination": "https://zed-0moa.onrender.com/graphql/:match*"
+    },
+    {
+      "source": "/metadata/:match*",
+      "destination": "https://zed-0moa.onrender.com/metadata/:match*"
+    },
+    {
+      "source": "/files/:match*",
+      "destination": "https://zed-0moa.onrender.com/files/:match*"
+    },
+    {
+      "source": "/healthz",
+      "destination": "https://zed-0moa.onrender.com/healthz"
+    },
+    {
+      "source": "/((?!assets/|images/|favicon|manifest|lead_finder_ui|mockServiceWorker).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
