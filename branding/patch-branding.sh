@@ -931,6 +931,7 @@ try {
     await app.listen(_earlyPort, '0.0.0.0');
     console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
     );
+    mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
 
