@@ -1,30 +1,39 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
-FROM twentycrm/twenty:latest
+# Pinned to v2.37.0 (released Aug 27 2026) — last version confirmed working on Render free tier.
+# Do NOT change to :latest — newer versions (v2.38+) changed internal file structure and need more RAM.
+FROM twentycrm/twenty:v2.37.0
 
-# 512MB Render Free tier memory budget:
-#   OS/container:        ~70 MB
-#   Node native/code:    ~80 MB
-#   glibc arenas:        ~30 MB (capped by MALLOC_ARENA_MAX=2)
-#   libuv thread pool:   ~10 MB (capped by UV_THREADPOOL_SIZE=2)
-#   JS Heap (old gen):   256 MB  ← max-old-space-size
-#   JS Heap (young gen):   4 MB  ← max-semi-space-size
-#   TOTAL ESTIMATED:    ~450 MB  ✅ safe under 512MB
-ENV NODE_OPTIONS="--max-old-space-size=256 --max-semi-space-size=4 --expose-gc"
+# ─── 512MB Render Free Tier memory budget ────────────────────────────────────
+#   OS/container overhead:          ~70 MB
+#   Node.js native (code, V8):      ~70 MB
+#   glibc malloc arenas (capped):   ~30 MB  (MALLOC_ARENA_MAX=2)
+#   libuv thread pool (capped):      ~5 MB  (UV_THREADPOOL_SIZE=2)
+#   JS Heap — startup peak:        ~300 MB  (NestJS needs ~260MB to bootstrap)
+#   JS Heap — steady state:        ~200 MB  (after GC watchdog clears startup bloat)
+#   TOTAL ESTIMATED PEAK RSS:      ~475 MB  ✅ just under 512MB
+# ─────────────────────────────────────────────────────────────────────────────
+ENV NODE_OPTIONS="--max-old-space-size=320 --max-semi-space-size=8 --expose-gc"
 ENV MALLOC_ARENA_MAX=2
 ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-ENV PORT=3000
-ENV NODE_PORT=3000
+# PORT/NODE_PORT are set to 10000 via Render dashboard env vars (overrides these defaults)
+ENV PORT=10000
+ENV NODE_PORT=10000
 
 USER root
-# patch-branding + providers are bind-mounted in docker-compose, but for Render we COPY them into image
+# Copy branding patch + early port binding module
 COPY branding/patch-branding.sh /app/patch-branding.sh
+COPY branding/early-port.cjs /app/early-port.cjs
 COPY lead_scraper_service.js /app/packages/twenty-server/dist/lead_scraper_service.js
 COPY lead_finder_ui.js /app/packages/twenty-server/dist/front/lead_finder_ui.js
 COPY lead_scraper_providers /app/packages/twenty-server/dist/lead_scraper_providers
 
-# Render expects PORT env, Twenty uses NODE_PORT
-EXPOSE 3000
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
+EXPOSE 10000
+
+# --require /app/early-port.cjs: binds the port in <100ms via a separate HTTP server
+#   BEFORE NestJS starts loading modules. This guarantees Render's health scanner
+#   always finds the port open, even if NestJS takes 2+ minutes to boot.
+#   The early server closes automatically when NestJS takes over (EADDRINUSE is caught).
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --require /app/early-port.cjs dist/main"]

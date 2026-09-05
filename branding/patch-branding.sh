@@ -1,6 +1,6 @@
 #!/bin/sh
 # Zed complete rebrand, Enterprise activation, Direct Google Auth & Seamless Workspace Access
-set -e
+# NOTE: No set -e here intentionally — patch failures must not crash the container boot
 
 FRONT_DIR="/app/packages/twenty-server/dist/front"
 SERVER_DIR="/app/packages/twenty-server/dist"
