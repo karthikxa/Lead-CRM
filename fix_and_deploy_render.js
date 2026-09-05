@@ -1,62 +1,94 @@
 const https = require('https');
 
-const RENDER_API_KEY = 'rnd_l7j8gWyp3mHPGc2lMcHeig3d0MOB';
+const API_KEY = 'rnd_Hk82F4dHYUS66wzv3xyGSwXzwUQB';
 const SERVICE_ID = 'srv-dad7c1afngtc73859pr0';
 
-function api(method, path, body) {
+function renderReq(path, method = 'GET', body = null) {
   return new Promise((resolve, reject) => {
-    const bodyStr = body ? JSON.stringify(body) : undefined;
+    const data = body ? JSON.stringify(body) : null;
     const req = https.request({
       hostname: 'api.render.com',
       path: `/v1${path}`,
       method,
       headers: {
-        'Authorization': `Bearer ${RENDER_API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {})
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
       }
     }, res => {
-      let d = ''; res.on('data', c => d += c);
-      res.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(d); } });
+      let chunks = '';
+      res.on('data', c => chunks += c);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, data: JSON.parse(chunks) }); }
+        catch { resolve({ status: res.statusCode, data: chunks }); }
+      });
     });
     req.on('error', reject);
-    if (bodyStr) req.write(bodyStr);
+    if (data) req.write(data);
     req.end();
   });
 }
 
 async function main() {
-  console.log('=== Checking current env vars ===');
-  const envs = await api('GET', `/services/${SERVICE_ID}/env-vars`);
-  const nodeOpts = envs.find ? envs.find(e => e.envVar?.key === 'NODE_OPTIONS') : null;
-  console.log('Current NODE_OPTIONS:', nodeOpts?.envVar?.value || 'not set in env vars');
-
-  // The correct NODE_OPTIONS: 384MB heap + expose-gc for manual GC
-  // Remove the bad env var so Dockerfile ENV takes effect
-  // OR update it to the correct value
-  console.log('\n=== Updating NODE_OPTIONS to safe 384MB heap ===');
+  // Step 1: Get current env vars
+  console.log('=== Fetching current env vars ===');
+  const envs = await renderReq(`/services/${SERVICE_ID}/env-vars`);
+  const envList = envs.data;
   
-  // Find all env vars and build updated list
-  const allEnvs = Array.isArray(envs) ? envs.map(e => ({
-    key: e.envVar?.key,
-    value: e.envVar?.key === 'NODE_OPTIONS' 
-      ? '--max-old-space-size=384 --expose-gc'
-      : e.envVar?.value
-  })) : [];
-
-  if (allEnvs.length > 0) {
-    const result = await api('PUT', `/services/${SERVICE_ID}/env-vars`, allEnvs);
-    console.log('Env update result:', JSON.stringify(result).substring(0, 300));
+  if (!Array.isArray(envList)) {
+    console.error('Could not fetch env vars:', envList);
+    process.exit(1);
+  }
+  
+  console.log(`Found ${envList.length} env vars`);
+  
+  // Step 2: Update env vars: NODE_OPTIONS to 384MB, MALLOC_ARENA_MAX=2, UV_THREADPOOL_SIZE=2
+  const envMap = new Map();
+  for (const e of envList) {
+    envMap.set(e.envVar.key, e.envVar.value);
   }
 
-  // Now trigger a new deploy
-  console.log('\n=== Triggering fresh deploy ===');
-  const deploy = await api('POST', `/services/${SERVICE_ID}/deploys`, { clearCache: 'do_not_clear' });
-  console.log('Deploy triggered:', deploy?.id || deploy?.deploy?.id || JSON.stringify(deploy).substring(0, 200));
-  console.log('Status:', deploy?.status || deploy?.deploy?.status);
-  console.log('\nMonitor at: https://dashboard.render.com/web/' + SERVICE_ID);
-  console.log('Service URL: https://zed-0moa.onrender.com');
+  envMap.set('NODE_OPTIONS', '--max-old-space-size=384');
+  envMap.set('MALLOC_ARENA_MAX', '2');
+  envMap.set('UV_THREADPOOL_SIZE', '2');
+  envMap.set('PORT', '10000');
+  envMap.set('NODE_PORT', '10000');
+  envMap.set('DISABLE_DB_MIGRATIONS', 'true');
+  envMap.set('DISABLE_CRON_JOBS_REGISTRATION', 'true');
+  envMap.set('PATCH_FRONT_ASSETS', 'false');
+
+  const updatedEnvs = Array.from(envMap.entries()).map(([key, value]) => ({ key, value }));
+  console.log('Setting NODE_OPTIONS to:', envMap.get('NODE_OPTIONS'));
+  console.log('Setting MALLOC_ARENA_MAX to:', envMap.get('MALLOC_ARENA_MAX'));
+  console.log('Setting UV_THREADPOOL_SIZE to:', envMap.get('UV_THREADPOOL_SIZE'));
+  
+  console.log('\n=== Updating env vars on Render ===');
+  const updateRes = await renderReq(`/services/${SERVICE_ID}/env-vars`, 'PUT', updatedEnvs);
+  console.log('Update status:', updateRes.status);
+  
+  if (updateRes.status !== 200) {
+    console.error('Failed to update env vars:', JSON.stringify(updateRes.data).substring(0, 300));
+    process.exit(1);
+  }
+  console.log('✅ Env vars updated successfully!');
+  
+  // Step 3: Trigger a new deploy
+  console.log('\n=== Triggering fresh Render deploy ===');
+  const deployRes = await renderReq(`/services/${SERVICE_ID}/deploys`, 'POST', { clearCache: 'do_not_clear' });
+  console.log('Deploy response status:', deployRes.status);
+  
+  const deploy = deployRes.data?.deploy || deployRes.data;
+  const deployId = deploy?.id;
+  console.log('Deploy ID:', deployId || JSON.stringify(deployRes.data).substring(0, 200));
+  console.log('Status:', deploy?.status);
+  
+  console.log('\n===========================================');
+  console.log('✅ RENDER DEPLOY TRIGGERED!');
+  console.log('Service: https://zed-0moa.onrender.com');
+  console.log('Monitor: https://dashboard.render.com/web/' + SERVICE_ID);
+  console.log('NODE_OPTIONS: --max-old-space-size=384 --expose-gc');
+  console.log('===========================================');
 }
 
 main().catch(console.error);

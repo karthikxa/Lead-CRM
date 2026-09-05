@@ -803,7 +803,7 @@ for (const filePath of allFiles) {
     console.log('[Zed] Skipping heavy frontend asset walk (Frontend is served by Vercel Edge CDN)');
 }
 
-// 13. Admin Lead Finder & Deduplication API Integration + Instant Early Port Binding
+// 13. Ensure NestJS cleanly binds to NODE_PORT / PORT on 0.0.0.0
 const mainFile = path.join(SERVER_DIR, 'main.js');
 if (fs.existsSync(mainFile)) {
     let mainContent = fs.readFileSync(mainFile, 'utf8');
@@ -812,145 +812,26 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject Instant Early Port Binding at the very top of main.js (Line 1, before any requires)
-    const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
-const _http = require('http');
-const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
-let _earlyServer = null;
-try {
-    _earlyServer = _http.createServer((req, res) => {
-        res.setHeader('Connection', 'close');
-        if (req.url === '/healthz' || req.url === '/health') {
-            res.writeHead(200, {'Content-Type': 'text/plain', 'Connection': 'close'});
-            res.end('ok');
-        } else {
-            res.writeHead(503, {'Content-Type': 'text/plain', 'Connection': 'close'});
-            res.end('Zed CRM starting...');
-        }
-    });
-    _earlyServer.on('error', (_err) => {
-        console.warn('[Zed] Early server warning:', _err.message);
-    });
-    _earlyServer.listen(_earlyPort, '0.0.0.0', () => {
-        console.log('[Zed] Immediate early port bound on ' + _earlyPort + ' — Render port scanner will detect service in <100ms');
-    });
-} catch (_bindErr) {
-    console.warn('[Zed] Early port bind note:', _bindErr.message);
-}
-// [Zed] END_EARLY_PORT_BIND
-`;
-    mainContent = earlyBindHeader + mainContent;
-
-    // 2) Mount Lead Scraper API and safely close pre-server before NestJS binds
+    // Clean binding on 0.0.0.0
     mainContent = mainContent.replace(
         /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
-        `// [Zed] Admin Lead Scraper API
-    try {
-        const leadScraperService = require('./lead_scraper_service.js');
-        app.use('/api/admin/leads/members', async (req, res) => {
-            try {
-                const client = await leadScraperService.getDbClient();
-                const schema = await leadScraperService.getWorkspaceSchema(client);
-                const membersRes = await client.query(\`SELECT id, "nameFirstName", "nameLastName", "userEmail", "avatarUrl" FROM "\${schema}"."workspaceMember" WHERE "deletedAt" IS NULL;\`);
-                await client.end();
-                res.json({ success: true, members: membersRes.rows });
-            } catch (e) {
-                res.status(500).json({ success: false, error: e.message });
-            }
-        });
-        app.use('/api/admin/leads/scrape', async (req, res) => {
-            if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-            try {
-                const { industry, location, city, place, maxResults, sources, keywords } = req.body || {};
-                const loc = location || [city, place].filter(Boolean).join(', ');
-                let leads, perSourceCounts={}, errors={};
-                if (sources && typeof sources==='object' && Object.keys(sources).length) {
-                    const unified = await (leadScraperService.scrapeUnified ? leadScraperService.scrapeUnified({ industry, location: loc, city, place, keywords, maxResults: Number(maxResults)||25, sources }) : { leads: await leadScraperService.scrapeBusinessLeads({ industry, location: loc, city, place, maxResults: Number(maxResults)||25 }) });
-                    leads = unified.leads; perSourceCounts = unified.perSourceCounts||{}; errors = unified.errors||{};
-                } else {
-                    leads = await leadScraperService.scrapeBusinessLeads({ industry, location: loc, city, place, maxResults: Number(maxResults) || 25 });
-                }
-                const client = await leadScraperService.getDbClient();
-                const schema = await leadScraperService.getWorkspaceSchema(client);
-                const existingRes = await client.query(\`
-                    SELECT c.name, c."domainNamePrimaryLinkUrl", m."nameFirstName", m."nameLastName", m."userEmail"
-                    FROM "\${schema}"."company" c
-                    LEFT JOIN "\${schema}"."workspaceMember" m ON c."accountOwnerId" = m.id
-                    WHERE c."deletedAt" IS NULL;
-                \`);
-                await client.end();
-                const existingMap = new Map();
-                for (const row of existingRes.rows) {
-                    if (row.name) existingMap.set(row.name.toLowerCase().trim(), row);
-                    if (row.domainNamePrimaryLinkUrl) {
-                        const cleanDomain = row.domainNamePrimaryLinkUrl.replace(/https?:\\/\\//, '').replace(/\\/.*$/, '').toLowerCase().trim();
-                        if (cleanDomain) existingMap.set(cleanDomain, row);
-                    }
-                }
-                for (const lead of leads) {
-                    const cleanName = lead.name.toLowerCase().trim();
-                    const cleanDomain = (lead.website || '').replace(/https?:\\/\\//, '').replace(/\\/.*$/, '').toLowerCase().trim();
-                    const existing = existingMap.get(cleanName) || (cleanDomain ? existingMap.get(cleanDomain) : null);
-                    if (existing) {
-                        lead.isDuplicate = true;
-                        lead.existingOwnerName = [existing.nameFirstName, existing.nameLastName].filter(Boolean).join(' ') || existing.userEmail || 'Assigned';
-                    } else {
-                        lead.isDuplicate = false;
-                    }
-                }
-                res.json({ success: true, leads });
-            } catch (e) {
-                res.status(500).json({ success: false, error: e.message });
-            }
-        });
-        app.use('/api/admin/leads/assign', async (req, res) => {
-            if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-            try {
-                const { leads, memberId, campaignName } = req.body || {};
-                const result = await leadScraperService.assignLeadsToMember({ leads, memberId, campaignName });
-                res.json(result);
-            } catch (e) {
-                res.status(500).json({ success: false, error: e.message });
-            }
-        });
-        console.log('[Zed] Mounted Admin Lead Scraper & Deduplication API endpoints!');
-    } catch (e) {
-        console.error('[Zed] Error mounting Lead Scraper API:', e.message);
-    }
-    // [Zed] Close early pre-server before NestJS binds the port
-    if (typeof _earlyServer !== 'undefined' && _earlyServer) {
-        if (typeof _earlyServer.closeAllConnections === 'function') {
-            _earlyServer.closeAllConnections();
-        }
-        await new Promise((resolve) => {
-            const _t = setTimeout(resolve, 500);
-            try { _earlyServer.close(() => { clearTimeout(_t); resolve(); }); } catch(e) { clearTimeout(_t); resolve(); }
-        });
-        console.log('[Zed] Handed port over to NestJS');
-    }
-    await app.listen(_earlyPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
+        `const _bindPort = Number(twentyConfigService.get('NODE_PORT') || process.env.PORT || 3000);
+    await app.listen(_bindPort, '0.0.0.0');
+    console.log('[Zed] NestJS fully listening on ' + _bindPort);`
     );
     mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
 
-// 14. Inject Lead Finder UI into index.html (cache-busted)
+// 14. Clean index.html (ensure any old lead finder scripts are removed)
 const indexHtmlFile = path.join(FRONT_DIR, 'index.html');
 if (fs.existsSync(indexHtmlFile)) {
     let htmlContent = fs.readFileSync(indexHtmlFile, 'utf8');
-    // Remove old injection and add versioned one to bust cache
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    // Always ensure v15 is present (bump for local gosom + manual CSV import)
-    htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    if (!htmlContent.includes('/lead_finder_ui.js?v=15')) {
-        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=15"></script>\n</head>');
-        fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
-        console.log('[Zed] Injected Lead Finder UI script v15 into index.html!');
-    }
+    fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
 }
 
-console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth, Admin Lead Scraper & Complete Rebrand!');
+console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 
 EOF
 

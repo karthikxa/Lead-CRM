@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/client-config",
+      "destination": "https://zed-0moa.onrender.com/client-config"
+    },
+    {
       "source": "/api/:match*",
       "destination": "https://zed-0moa.onrender.com/api/:match*"
     },
@@ -14,19 +18,39 @@
       "destination": "https://zed-0moa.onrender.com/graphql/:match*"
     },
     {
+      "source": "/graphql",
+      "destination": "https://zed-0moa.onrender.com/graphql"
+    },
+    {
       "source": "/metadata/:match*",
       "destination": "https://zed-0moa.onrender.com/metadata/:match*"
+    },
+    {
+      "source": "/metadata",
+      "destination": "https://zed-0moa.onrender.com/metadata"
     },
     {
       "source": "/files/:match*",
       "destination": "https://zed-0moa.onrender.com/files/:match*"
     },
     {
+      "source": "/admin-panel/:match*",
+      "destination": "https://zed-0moa.onrender.com/admin-panel/:match*"
+    },
+    {
+      "source": "/open-api/:match*",
+      "destination": "https://zed-0moa.onrender.com/open-api/:match*"
+    },
+    {
       "source": "/healthz",
       "destination": "https://zed-0moa.onrender.com/healthz"
     },
     {
-      "source": "/((?!assets/|images/|favicon|manifest|lead_finder_ui|mockServiceWorker).*)",
+      "source": "/health",
+      "destination": "https://zed-0moa.onrender.com/health"
+    },
+    {
+      "source": "/((?!assets/|images/|favicon|manifest|mockServiceWorker).*)",
       "destination": "/index.html"
     }
   ]
