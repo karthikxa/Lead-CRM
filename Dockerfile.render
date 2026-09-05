@@ -1,8 +1,9 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: limit heap to 384MB
-ENV NODE_OPTIONS="--max-old-space-size=384"
+# 512MB Render Free: 420MB heap + MALLOC_ARENA_MAX=2 saves native RAM
+ENV NODE_OPTIONS="--max-old-space-size=420"
+ENV MALLOC_ARENA_MAX=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
