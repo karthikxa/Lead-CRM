@@ -1,8 +1,17 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: limit heap to 384MB + expose-gc for proactive memory reclamation
-ENV NODE_OPTIONS="--max-old-space-size=384 --expose-gc"
+# 512MB Render Free tier memory budget:
+#   OS/container:        ~70 MB
+#   Node native/code:    ~80 MB
+#   glibc arenas:        ~30 MB (capped by MALLOC_ARENA_MAX=2)
+#   libuv thread pool:   ~10 MB (capped by UV_THREADPOOL_SIZE=2)
+#   JS Heap (old gen):   256 MB  ← max-old-space-size
+#   JS Heap (young gen):   4 MB  ← max-semi-space-size
+#   TOTAL ESTIMATED:    ~450 MB  ✅ safe under 512MB
+ENV NODE_OPTIONS="--max-old-space-size=256 --max-semi-space-size=4 --expose-gc"
+ENV MALLOC_ARENA_MAX=2
+ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
