@@ -1,29 +1,21 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
-# PINNED to v2.37.0 (Aug 27 2026) — last version working on Render free tier.
-# Do NOT change to :latest — newer versions need more RAM.
-FROM twentycrm/twenty:v2.37.0
+FROM twentycrm/twenty:latest
 
-# Confirmed working config from deploy dep-dadah9afngtc738hl8vg (commit bb28cfa).
-# --optimize_for_size: reduces V8 per-object overhead ~15%, critical for 512MB limit.
-# 450MB heap leaves ~62MB for OS/native overhead.
-# NODE_OPTIONS env var in Render dashboard must NOT be set (it would override this).
-ENV NODE_OPTIONS="--max-old-space-size=450 --optimize_for_size"
+# 512MB Render Free: limit heap to 450MB (leaves ~62MB for OS/native/PG client overhead)
+ENV NODE_OPTIONS="--max-old-space-size=450"
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-ENV PATCH_FRONT_ASSETS=false
-ENV PORT=10000
-ENV NODE_PORT=10000
+ENV PORT=3000
+ENV NODE_PORT=3000
 
 USER root
-# patch-branding.sh patches main.js to inject early port binding + close-handoff before NestJS starts
+# patch-branding + providers are bind-mounted in docker-compose, but for Render we COPY them into image
 COPY branding/patch-branding.sh /app/patch-branding.sh
-# Lead finder UI only (no backend scraper)
+COPY lead_scraper_service.js /app/packages/twenty-server/dist/lead_scraper_service.js
 COPY lead_finder_ui.js /app/packages/twenty-server/dist/front/lead_finder_ui.js
+COPY lead_scraper_providers /app/packages/twenty-server/dist/lead_scraper_providers
 
-EXPOSE 10000
-
-# IMPORTANT: No --require flag here. patch-branding.sh injects early port binding
-# directly into dist/main.js with a proper close-and-handoff before NestJS binds.
-# Adding --require here causes EADDRINUSE crash (two servers on same port).
+# Render expects PORT env, Twenty uses NODE_PORT
+EXPOSE 3000
 ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --optimize_for_size dist/main"]
