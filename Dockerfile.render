@@ -1,14 +1,13 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
-# PINNED to v2.37.0 (Aug 27 2026) — the last confirmed working version.
-# Do NOT upgrade to :latest — v2.38+ changed file paths and requires more RAM.
+# PINNED to v2.37.0 (Aug 27 2026) — last version working on Render free tier.
+# Do NOT change to :latest — newer versions need more RAM.
 FROM twentycrm/twenty:v2.37.0
 
-# 512MB Render Free: 450MB heap + --optimize_for_size (reduces per-object memory ~15%)
-# This was the confirmed working config from commit bb28cfa (deploy dep-dadah9afngtc738hl8vg).
-# The Render env var NODE_OPTIONS MUST be cleared so this Dockerfile setting is used.
-ENV NODE_OPTIONS="--max-old-space-size=450 --optimize_for_size --expose-gc"
-ENV MALLOC_ARENA_MAX=2
-ENV UV_THREADPOOL_SIZE=2
+# Confirmed working config from deploy dep-dadah9afngtc738hl8vg (commit bb28cfa).
+# --optimize_for_size: reduces V8 per-object overhead ~15%, critical for 512MB limit.
+# 450MB heap leaves ~62MB for OS/native overhead.
+# NODE_OPTIONS env var in Render dashboard must NOT be set (it would override this).
+ENV NODE_OPTIONS="--max-old-space-size=450 --optimize_for_size"
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
@@ -17,15 +16,14 @@ ENV PORT=10000
 ENV NODE_PORT=10000
 
 USER root
-# Copy branding patch + early port binding module
+# patch-branding.sh patches main.js to inject early port binding + close-handoff before NestJS starts
 COPY branding/patch-branding.sh /app/patch-branding.sh
-COPY branding/early-port.cjs /app/early-port.cjs
-# Lead finder UI (UI only, no backend scraper)
+# Lead finder UI only (no backend scraper)
 COPY lead_finder_ui.js /app/packages/twenty-server/dist/front/lead_finder_ui.js
 
 EXPOSE 10000
 
-# early-port.cjs binds port 10000 in <100ms BEFORE NestJS loads (via --require),
-# ensuring Render's health scanner always succeeds during the long NestJS startup.
-# --optimize_for_size reduces V8 object overhead significantly for large NestJS apps.
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --require /app/early-port.cjs --optimize_for_size dist/main"]
+# IMPORTANT: No --require flag here. patch-branding.sh injects early port binding
+# directly into dist/main.js with a proper close-and-handoff before NestJS binds.
+# Adding --require here causes EADDRINUSE crash (two servers on same port).
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --optimize_for_size dist/main"]

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Zed complete rebrand, Enterprise activation, Direct Google Auth & Seamless Workspace Access
-# NOTE: No set -e here intentionally — patch failures must not crash the container boot
+set -e
 
 FRONT_DIR="/app/packages/twenty-server/dist/front"
 SERVER_DIR="/app/packages/twenty-server/dist"
@@ -484,8 +484,8 @@ if (fs.existsSync(userResolverFile)) {
     console.log('[Zed] Patched currentUser resolver in user.resolver.js!');
 }
 
-// 7. Frontend assets patching — always run for Z logo (set PATCH_FRONT_ASSETS=false to skip to save RAM)
-if (process.env.PATCH_FRONT_ASSETS !== 'false') {
+// 7. Frontend assets patching (Only if PATCH_FRONT_ASSETS is true; skipped on Render to prevent OOM since frontend is hosted on Vercel Edge CDN)
+if (process.env.PATCH_FRONT_ASSETS === 'true') {
     function patchFrontAssets(dir) {
     if (!fs.existsSync(dir)) return;
     const files = fs.readdirSync(dir);
@@ -541,7 +541,7 @@ if (process.env.PATCH_FRONT_ASSETS !== 'false') {
                 );
                 content = content.replace(
                     /UV=\(e,t\)=>e&&IHe\(e\)\?B5\[e\]:t\?bHe\(t\):B5\.FALLBACK/g,
-                    'UV=(e,t)=>t==="zed"||e==="ZED"||t==="auto"||t==="default"||t==="Zed"?Z_ICON:e&&IHe(e)?B5[e]:t?bHe(t):Z_ICON'
+                    'UV=(e,t)=>t==="zed"||e==="ZED"||t==="auto"||t==="Zed"?Z_ICON:e&&IHe(e)?B5[e]:t?bHe(t):Z_ICON'
                 );
                 modified = true;
                 console.log('[Zed] Patched AI model icons and UV in index asset:', f);
@@ -817,19 +817,6 @@ if (fs.existsSync(mainFile)) {
 const _http = require('http');
 const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
 let _earlyServer = null;
-
-// [Zed] Active GC Watchdog to keep heap safely below 280MB on 512MB Render free tier
-if (typeof global.gc === 'function') {
-    setInterval(() => {
-        try {
-            const m = process.memoryUsage();
-            if (m.heapUsed > 250 * 1024 * 1024) {
-                global.gc();
-            }
-        } catch (e) {}
-    }, 10000).unref();
-}
-
 try {
     _earlyServer = _http.createServer((req, res) => {
         res.setHeader('Connection', 'close');
@@ -942,10 +929,7 @@ try {
         console.log('[Zed] Handed port over to NestJS');
     }
     await app.listen(_earlyPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _earlyPort);
-    if (typeof global.gc === 'function') {
-        try { global.gc(); console.log('[Zed] Post-boot Garbage Collection freed heap memory!'); } catch(e){}
-    }`
+    console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
     );
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
@@ -956,12 +940,12 @@ if (fs.existsSync(indexHtmlFile)) {
     let htmlContent = fs.readFileSync(indexHtmlFile, 'utf8');
     // Remove old injection and add versioned one to bust cache
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    // Always ensure v16 is present (bump for +Leads removal + phone filter + task status fix)
+    // Always ensure v15 is present (bump for local gosom + manual CSV import)
     htmlContent = htmlContent.replace(/<script src="\/lead_finder_ui\.js[^"]*"><\/script>\n?/g, '');
-    if (!htmlContent.includes('/lead_finder_ui.js?v=16')) {
-        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=16"></script>\n</head>');
+    if (!htmlContent.includes('/lead_finder_ui.js?v=15')) {
+        htmlContent = htmlContent.replace('</head>', '<script src="/lead_finder_ui.js?v=15"></script>\n</head>');
         fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
-        console.log('[Zed] Injected Lead Finder UI script v16 into index.html!');
+        console.log('[Zed] Injected Lead Finder UI script v15 into index.html!');
     }
 }
 
