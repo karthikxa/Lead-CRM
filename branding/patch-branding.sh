@@ -803,7 +803,7 @@ for (const filePath of allFiles) {
     console.log('[Zed] Skipping heavy frontend asset walk (Frontend is served by Vercel Edge CDN)');
 }
 
-// 13. Ensure NestJS cleanly binds to NODE_PORT / PORT on 0.0.0.0
+// 13. Immediate Early Port Binding + Clean Handover to NestJS
 const mainFile = path.join(SERVER_DIR, 'main.js');
 if (fs.existsSync(mainFile)) {
     let mainContent = fs.readFileSync(mainFile, 'utf8');
@@ -812,12 +812,50 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // Clean binding on 0.0.0.0
+    // 1) Inject Instant Early Port Binding at the very top of main.js (Line 1, before any requires)
+    const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
+const _http = require('http');
+const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 10000);
+let _earlyServer = null;
+try {
+    _earlyServer = _http.createServer((req, res) => {
+        res.setHeader('Connection', 'close');
+        if (req.url === '/healthz' || req.url === '/health') {
+            res.writeHead(200, {'Content-Type': 'text/plain', 'Connection': 'close'});
+            res.end('ok');
+        } else {
+            res.writeHead(503, {'Content-Type': 'text/plain', 'Connection': 'close'});
+            res.end('Zed CRM starting...');
+        }
+    });
+    _earlyServer.on('error', (_err) => {
+        console.warn('[Zed] Early server warning:', _err.message);
+    });
+    _earlyServer.listen(_earlyPort, '0.0.0.0', () => {
+        console.log('[Zed] Immediate early port bound on ' + _earlyPort + ' — Render port scanner will detect service in <100ms');
+    });
+} catch (_bindErr) {
+    console.warn('[Zed] Early port bind note:', _bindErr.message);
+}
+// [Zed] END_EARLY_PORT_BIND
+`;
+    mainContent = earlyBindHeader + mainContent;
+
+    // 2) Close early pre-server before NestJS binds the port
     mainContent = mainContent.replace(
         /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
-        `const _bindPort = Number(twentyConfigService.get('NODE_PORT') || process.env.PORT || 3000);
-    await app.listen(_bindPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _bindPort);`
+        `if (typeof _earlyServer !== 'undefined' && _earlyServer) {
+        if (typeof _earlyServer.closeAllConnections === 'function') {
+            _earlyServer.closeAllConnections();
+        }
+        await new Promise((resolve) => {
+            const _t = setTimeout(resolve, 500);
+            try { _earlyServer.close(() => { clearTimeout(_t); resolve(); }); } catch(e) { clearTimeout(_t); resolve(); }
+        });
+        console.log('[Zed] Handed port over to NestJS');
+    }
+    await app.listen(_earlyPort, '0.0.0.0');
+    console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
     );
     mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
