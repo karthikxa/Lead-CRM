@@ -50,18 +50,17 @@ async function main() {
   }
 
   envMap.set('NODE_OPTIONS', '--max-old-space-size=384');
-  envMap.set('MALLOC_ARENA_MAX', '2');
-  envMap.set('UV_THREADPOOL_SIZE', '2');
-  envMap.set('PORT', '10000');
-  envMap.set('NODE_PORT', '10000');
+  envMap.delete('MALLOC_ARENA_MAX');
+  envMap.delete('UV_THREADPOOL_SIZE');
+  envMap.set('PORT', '3000');
+  envMap.set('NODE_PORT', '3000');
   envMap.set('DISABLE_DB_MIGRATIONS', 'true');
   envMap.set('DISABLE_CRON_JOBS_REGISTRATION', 'true');
   envMap.set('PATCH_FRONT_ASSETS', 'false');
 
   const updatedEnvs = Array.from(envMap.entries()).map(([key, value]) => ({ key, value }));
   console.log('Setting NODE_OPTIONS to:', envMap.get('NODE_OPTIONS'));
-  console.log('Setting MALLOC_ARENA_MAX to:', envMap.get('MALLOC_ARENA_MAX'));
-  console.log('Setting UV_THREADPOOL_SIZE to:', envMap.get('UV_THREADPOOL_SIZE'));
+  console.log('Setting PORT to:', envMap.get('PORT'));
   
   console.log('\n=== Updating env vars on Render ===');
   const updateRes = await renderReq(`/services/${SERVICE_ID}/env-vars`, 'PUT', updatedEnvs);

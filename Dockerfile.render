@@ -1,19 +1,17 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: limit heap to 384MB, optimize for size, limit malloc arenas to save 80MB native RAM
+# 512MB Render Free: limit heap to 384MB
 ENV NODE_OPTIONS="--max-old-space-size=384"
-ENV MALLOC_ARENA_MAX=2
-ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-ENV PORT=10000
-ENV NODE_PORT=10000
+ENV PORT=3000
+ENV NODE_PORT=3000
 
 USER root
 # patch-branding is copied into image for rebrand & clean port binding
 COPY branding/patch-branding.sh /app/patch-branding.sh
 
-EXPOSE 10000
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --optimize_for_size dist/main"]
+EXPOSE 3000
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]

@@ -815,7 +815,7 @@ if (fs.existsSync(mainFile)) {
     // 1) Inject Instant Early Port Binding at the very top of main.js (Line 1, before any requires)
     const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
 const _http = require('http');
-const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 10000);
+const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
 let _earlyServer = null;
 try {
     _earlyServer = _http.createServer((req, res) => {
