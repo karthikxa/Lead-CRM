@@ -1072,12 +1072,6 @@ for (const f of findFiles(SERVER_DIR, 'cron.module.js')) {
     console.log('[Zed] Stubbed cron.module.js at:', f.replace(SERVER_DIR, ''));
 }
 
-// Stub billing modules
-for (const f of findFilesMatching(SERVER_DIR, /^billing.*\.module\.js$/)) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-    console.log('[Zed] Stubbed billing module at:', f.replace(SERVER_DIR, ''));
-}
-
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 console.log('[Zed] Heavy non-core modules stubbed safely with Proxy export. Expected boot heap: <220MB.');
 EOF
