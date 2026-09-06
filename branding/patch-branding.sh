@@ -34,6 +34,12 @@ else
     fi
 fi
 
+# Remove dist/front to completely prevent ServeStaticModule from loading & save disk/RAM
+if [ -d "/app/packages/twenty-server/dist/front" ]; then
+    rm -rf /app/packages/twenty-server/dist/front
+    echo "[Zed] Removed dist/front to disable ServeStaticModule and save RAM (Frontend is served by Vercel Edge CDN)"
+fi
+
 echo "[Zed] Applying Single-Domain Redirects, Direct Google Auth & Branding patch..."
 
 node --max-old-space-size=128 - << 'EOF'
@@ -43,6 +49,22 @@ const zlib = require('zlib');
 
 const FRONT_DIR = '/app/packages/twenty-server/dist/front';
 const SERVER_DIR = '/app/packages/twenty-server/dist';
+
+// 0a. Neutralize heavy telemetry/profiling in instrument.js (saves ~40MB RAM)
+const instrumentFile = path.join(SERVER_DIR, 'instrument.js');
+if (fs.existsSync(instrumentFile)) {
+    fs.writeFileSync(instrumentFile, '"use strict";\nObject.defineProperty(exports, "__esModule", { value: true });\n// Telemetry & profiling neutralized for 512MB RAM constraint\n', 'utf8');
+    console.log('[Zed] Neutralized heavy telemetry & profiling in instrument.js (saves ~40MB RAM)!');
+}
+
+// 0b. Neutralize SentryModule in app.module.js
+const appModuleFile = path.join(SERVER_DIR, 'app.module.js');
+if (fs.existsSync(appModuleFile)) {
+    let appContent = fs.readFileSync(appModuleFile, 'utf8');
+    appContent = appContent.replace(/(?:[a-zA-Z0-9_]+\.)?SentryModule\.forRoot\([^)]*\)/g, '{ module: class DummySentryModule {} }');
+    fs.writeFileSync(appModuleFile, appContent, 'utf8');
+    console.log('[Zed] Patched app.module.js: neutralized SentryModule!');
+}
 
 // 1. Backend Enterprise Plan Service & Resolver
 const enterpriseFile = path.join(SERVER_DIR, 'engine/core-modules/enterprise/services/enterprise-plan.service.js');
@@ -841,7 +863,7 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject Instant Early Port Binding at the very top of main.js (Line 1, before any requires)
+    // 1) Inject Instant Early Port Binding + Active Boot-Time GC at the very top of main.js (Line 1, before any requires)
     const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
 const _http = require('http');
 const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
@@ -866,6 +888,19 @@ try {
 } catch (_bindErr) {
     console.warn('[Zed] Early port bind note:', _bindErr.message);
 }
+
+// [Zed] Active Boot-Time GC Ticker: runs every 3s to keep heap under 220MB during module compilation
+let _bootGcTimer = null;
+if (typeof global.gc === 'function') {
+    _bootGcTimer = setInterval(() => {
+        try {
+            global.gc();
+            const _m = process.memoryUsage();
+            console.log('[Zed Boot GC] Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
+        } catch (e) {}
+    }, 3000);
+    _bootGcTimer.unref();
+}
 // [Zed] END_EARLY_PORT_BIND
 `;
     mainContent = earlyBindHeader + mainContent;
@@ -873,12 +908,19 @@ try {
     // 2) Close early pre-server before NestJS binds the port
     mainContent = mainContent.replace(
         /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
-        `if (typeof _earlyServer !== 'undefined' && _earlyServer) {
+        `if (typeof global.gc === 'function') {
+        global.gc();
+    }
+    if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
+        clearInterval(_bootGcTimer);
+        _bootGcTimer = null;
+    }
+    if (typeof _earlyServer !== 'undefined' && _earlyServer) {
         if (typeof _earlyServer.closeAllConnections === 'function') {
             _earlyServer.closeAllConnections();
         }
         await new Promise((resolve) => {
-            const _t = setTimeout(resolve, 500);
+            const _t = setTimeout(resolve, 300);
             try { _earlyServer.close(() => { clearTimeout(_t); resolve(); }); } catch(e) { clearTimeout(_t); resolve(); }
         });
         console.log('[Zed] Handed port over to NestJS');
@@ -886,13 +928,12 @@ try {
     await app.listen(_earlyPort, '0.0.0.0');
     console.log('[Zed] NestJS fully listening on ' + _earlyPort);
     if (typeof global.gc === 'function') {
-        console.log('[Zed] Triggering post-bootstrap Garbage Collection...');
         global.gc();
         const _m = process.memoryUsage();
-        console.log('[Zed] Post-GC Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
+        console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
         setInterval(() => {
             try { global.gc(); } catch(e) {}
-        }, 45000).unref();
+        }, 30000).unref();
     }`
     );
     mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
