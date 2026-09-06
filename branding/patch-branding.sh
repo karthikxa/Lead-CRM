@@ -866,6 +866,16 @@ if (fs.existsSync(mainFile)) {
     // 1) Inject Instant Early Port Binding + Active Boot-Time GC at the very top of main.js (Line 1, before any requires)
     const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
 const _http = require('http');
+const _v8 = require('v8');
+const _vm = require('vm');
+try {
+    _v8.setFlagsFromString('--expose_gc');
+    global.gc = _vm.runInNewContext('gc');
+    console.log('[Zed] Runtime Garbage Collector enabled successfully!');
+} catch (_gcErr) {
+    console.warn('[Zed] Runtime GC init note:', _gcErr.message);
+}
+
 const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
 let _earlyServer = null;
 try {
@@ -889,7 +899,7 @@ try {
     console.warn('[Zed] Early port bind note:', _bindErr.message);
 }
 
-// [Zed] Active Boot-Time GC Ticker: runs every 3s to keep heap under 220MB during module compilation
+// [Zed] Active Boot-Time GC Ticker: runs every 2.5s continuously to keep heap under 220MB during both module compilation and app.listen()
 let _bootGcTimer = null;
 if (typeof global.gc === 'function') {
     _bootGcTimer = setInterval(() => {
@@ -898,7 +908,7 @@ if (typeof global.gc === 'function') {
             const _m = process.memoryUsage();
             console.log('[Zed Boot GC] Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
         } catch (e) {}
-    }, 3000);
+    }, 2500);
     _bootGcTimer.unref();
 }
 // [Zed] END_EARLY_PORT_BIND
@@ -910,10 +920,6 @@ if (typeof global.gc === 'function') {
         /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
         `if (typeof global.gc === 'function') {
         global.gc();
-    }
-    if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
-        clearInterval(_bootGcTimer);
-        _bootGcTimer = null;
     }
     if (typeof _earlyServer !== 'undefined' && _earlyServer) {
         if (typeof _earlyServer.closeAllConnections === 'function') {
@@ -927,6 +933,10 @@ if (typeof global.gc === 'function') {
     }
     await app.listen(_earlyPort, '0.0.0.0');
     console.log('[Zed] NestJS fully listening on ' + _earlyPort);
+    if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
+        clearInterval(_bootGcTimer);
+        _bootGcTimer = null;
+    }
     if (typeof global.gc === 'function') {
         global.gc();
         const _m = process.memoryUsage();
