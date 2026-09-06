@@ -855,7 +855,16 @@ try {
         console.log('[Zed] Handed port over to NestJS');
     }
     await app.listen(_earlyPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _earlyPort);`
+    console.log('[Zed] NestJS fully listening on ' + _earlyPort);
+    if (typeof global.gc === 'function') {
+        console.log('[Zed] Triggering post-bootstrap Garbage Collection...');
+        global.gc();
+        const _m = process.memoryUsage();
+        console.log('[Zed] Post-GC Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
+        setInterval(() => {
+            try { global.gc(); } catch(e) {}
+        }, 45000).unref();
+    }`
     );
     mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
