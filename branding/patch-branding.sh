@@ -1066,12 +1066,6 @@ for (const f of findFiles(SERVER_DIR, 'create-event.util.js')) {
     fs.writeFileSync(f, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.createEvent=()=>{};', 'utf8');
 }
 
-// Stub cron module
-for (const f of findFiles(SERVER_DIR, 'cron.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-    console.log('[Zed] Stubbed cron.module.js at:', f.replace(SERVER_DIR, ''));
-}
-
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 console.log('[Zed] Heavy non-core modules stubbed safely with Proxy export. Expected boot heap: <220MB.');
 EOF
