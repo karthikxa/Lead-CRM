@@ -863,55 +863,24 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject Active Boot-Time GC at the very top of main.js
-    const earlyBindHeader = `// [Zed] ACTIVE_BOOT_GC
-const _v8 = require('v8');
-const _vm = require('vm');
-try {
-    _v8.setFlagsFromString('--expose_gc');
-    global.gc = _vm.runInNewContext('gc');
-    console.log('[Zed] Runtime Garbage Collector enabled successfully!');
-} catch (_gcErr) {
-    console.warn('[Zed] Runtime GC init note:', _gcErr.message);
-}
-
-// Active Boot-Time GC Ticker: runs every 2.5s continuously to keep heap under 220MB during module compilation
-let _bootGcTimer = null;
-if (typeof global.gc === 'function') {
-    _bootGcTimer = setInterval(() => {
-        try {
-            global.gc();
-            const _m = process.memoryUsage();
-            console.log('[Zed Boot GC] Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
-        } catch (e) {}
-    }, 2500);
-    _bootGcTimer.unref();
-}
-// [Zed] END_ACTIVE_BOOT_GC
+    // 1) Inject clean boot logging at the very top of main.js
+    const earlyBindHeader = `// [Zed] ACTIVE_BOOT
+console.log('[Zed] NestJS runtime bootstrap starting...');
+// [Zed] END_ACTIVE_BOOT
 `;
     mainContent = earlyBindHeader + mainContent;
 
-    // 2) Listen on internal port (3001) for the reverse proxy
+    // 2) Listen on internal port (3001) for the reverse proxy - universal regex
     mainContent = mainContent.replace(
-        /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
-        `if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
-        clearInterval(_bootGcTimer);
-        _bootGcTimer = null;
-    }
-    if (typeof global.gc === 'function') {
-        try { global.gc(); } catch(e) {}
-    }
-    const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
-    await app.listen(_nestPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
-    if (typeof global.gc === 'function') {
-        try { global.gc(); } catch(e) {}
-        const _m = process.memoryUsage();
-        console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
-        setInterval(() => {
+        /await app\.listen\([^)]*\);/,
+        `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
+        await app.listen(_nestPort, '0.0.0.0');
+        console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
+        if (typeof global.gc === 'function') {
             try { global.gc(); } catch(e) {}
-        }, 30000).unref();
-    }`
+            const _m = process.memoryUsage();
+            console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
+        }`
     );
     mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
@@ -1115,7 +1084,9 @@ const http = require('http');
 const net = require('net');
 
 const PUBLIC_PORT = Number(process.env.ZED_PUBLIC_PORT || process.env.PORT || 10000);
-const NEST_PORT = Number(process.env.ZED_INTERNAL_PORT || 3001);
+const PRIMARY_NEST_PORT = Number(process.env.ZED_INTERNAL_PORT || 3001);
+const FALLBACK_NEST_PORT = 3000;
+let activeNestPort = null;
 let nestReady = false;
 const startTime = Date.now();
 
@@ -1123,19 +1094,28 @@ function elapsed() { return Math.round((Date.now() - startTime) / 1000) + 's'; }
 
 // HTTP reverse proxy
 const proxy = http.createServer((clientReq, clientRes) => {
-  if (!nestReady) {
-    // Return 200 so Render marks service as live
+  // CRITICAL: Always respond 200 immediately to /healthz so Render health checker & keepalive cron NEVER time out!
+  if (clientReq.url === '/healthz' || clientReq.url === '/healthz/' || clientReq.url.startsWith('/healthz?')) {
+    clientRes.writeHead(200, {
+      'Content-Type': 'text/plain',
+      'X-Zed-Status': nestReady ? 'ready' : 'starting'
+    });
+    clientRes.end(nestReady ? 'Zed CRM is ready' : 'Zed CRM is starting...');
+    return;
+  }
+
+  if (!nestReady || !activeNestPort) {
     clientRes.writeHead(200, { 'Content-Type': 'text/plain', 'X-Zed-Status': 'starting' });
-    clientRes.end('Zed CRM is starting...');
+    clientRes.end('Zed CRM is starting, please refresh in a moment...');
     return;
   }
 
   const options = {
     hostname: '127.0.0.1',
-    port: NEST_PORT,
+    port: activeNestPort,
     path: clientReq.url,
     method: clientReq.method,
-    headers: { ...clientReq.headers, host: '127.0.0.1:' + NEST_PORT }
+    headers: { ...clientReq.headers, host: clientReq.headers.host || ('127.0.0.1:' + activeNestPort) }
   };
 
   const proxyReq = http.request(options, proxyRes => {
@@ -1155,9 +1135,9 @@ const proxy = http.createServer((clientReq, clientRes) => {
 
 // Handle WebSocket upgrades (Twenty CRM uses WS for real-time)
 proxy.on('upgrade', (req, socket, head) => {
-  if (!nestReady) { socket.destroy(); return; }
-  const conn = net.createConnection(NEST_PORT, '127.0.0.1', () => {
-    conn.write('GET ' + req.url + ' HTTP/1.1\r\nHost: 127.0.0.1:' + NEST_PORT + '\r\n' +
+  if (!nestReady || !activeNestPort) { socket.destroy(); return; }
+  const conn = net.createConnection(activeNestPort, '127.0.0.1', () => {
+    conn.write('GET ' + req.url + ' HTTP/1.1\r\nHost: 127.0.0.1:' + activeNestPort + '\r\n' +
       Object.entries(req.headers).map(([k,v]) => k + ': ' + v).join('\r\n') +
       '\r\n\r\n');
     conn.write(head);
@@ -1175,21 +1155,36 @@ proxy.on('error', err => {
   console.error('[Zed-Proxy] Error:', err.message);
 });
 
-// Poll for NestJS readiness every 3 seconds
-const readyCheck = setInterval(() => {
-  const t = net.createConnection(NEST_PORT, '127.0.0.1');
-  t.setTimeout(1000);
-  t.on('connect', () => {
-    t.destroy();
-    if (!nestReady) {
-      nestReady = true;
-      clearInterval(readyCheck);
-      console.log('[Zed-Proxy] NestJS ready on port ' + NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic');
-    }
+// Poll for NestJS readiness on both port 3001 and port 3000 every 2 seconds
+function checkPort(port) {
+  return new Promise(resolve => {
+    const t = net.createConnection(port, '127.0.0.1');
+    t.setTimeout(1000);
+    t.on('connect', () => { t.destroy(); resolve(true); });
+    t.on('error', () => resolve(false));
+    t.on('timeout', () => { t.destroy(); resolve(false); });
   });
-  t.on('error', () => t.destroy());
-  t.on('timeout', () => t.destroy());
-}, 3000);
+}
+
+const readyCheck = setInterval(async () => {
+  if (nestReady) return;
+  const on3001 = await checkPort(PRIMARY_NEST_PORT);
+  if (on3001) {
+    activeNestPort = PRIMARY_NEST_PORT;
+    nestReady = true;
+    clearInterval(readyCheck);
+    console.log('[Zed-Proxy] NestJS detected on port ' + PRIMARY_NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic!');
+    return;
+  }
+  const on3000 = await checkPort(FALLBACK_NEST_PORT);
+  if (on3000) {
+    activeNestPort = FALLBACK_NEST_PORT;
+    nestReady = true;
+    clearInterval(readyCheck);
+    console.log('[Zed-Proxy] NestJS detected on fallback port ' + FALLBACK_NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic!');
+    return;
+  }
+}, 2000);
 
 process.on('SIGTERM', () => { proxy.close(); process.exit(0); });
 process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
