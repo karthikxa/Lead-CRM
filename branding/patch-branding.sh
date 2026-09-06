@@ -863,9 +863,8 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject Instant Early Port Binding + Active Boot-Time GC at the very top of main.js (Line 1, before any requires)
-    const earlyBindHeader = `// [Zed] EARLY_PORT_BIND — bind port immediately on process start (<10ms) so Render port scan succeeds
-const _http = require('http');
+    // 1) Inject Active Boot-Time GC at the very top of main.js
+    const earlyBindHeader = `// [Zed] ACTIVE_BOOT_GC
 const _v8 = require('v8');
 const _vm = require('vm');
 try {
@@ -876,30 +875,7 @@ try {
     console.warn('[Zed] Runtime GC init note:', _gcErr.message);
 }
 
-const _earlyPort = Number(process.env.PORT || process.env.NODE_PORT || 3000);
-let _earlyServer = null;
-try {
-    _earlyServer = _http.createServer((req, res) => {
-        res.setHeader('Connection', 'close');
-        if (req.url === '/healthz' || req.url === '/health') {
-            res.writeHead(200, {'Content-Type': 'text/plain', 'Connection': 'close'});
-            res.end('ok');
-        } else {
-            res.writeHead(503, {'Content-Type': 'text/plain', 'Connection': 'close'});
-            res.end('Zed CRM starting...');
-        }
-    });
-    _earlyServer.on('error', (_err) => {
-        console.warn('[Zed] Early server warning:', _err.message);
-    });
-    _earlyServer.listen(_earlyPort, '0.0.0.0', () => {
-        console.log('[Zed] Immediate early port bound on ' + _earlyPort + ' — Render port scanner will detect service in <100ms');
-    });
-} catch (_bindErr) {
-    console.warn('[Zed] Early port bind note:', _bindErr.message);
-}
-
-// [Zed] Active Boot-Time GC Ticker: runs every 2.5s continuously to keep heap under 220MB during both module compilation and app.listen()
+// Active Boot-Time GC Ticker: runs every 2.5s continuously to keep heap under 220MB during module compilation
 let _bootGcTimer = null;
 if (typeof global.gc === 'function') {
     _bootGcTimer = setInterval(() => {
@@ -911,32 +887,23 @@ if (typeof global.gc === 'function') {
     }, 2500);
     _bootGcTimer.unref();
 }
-// [Zed] END_EARLY_PORT_BIND
+// [Zed] END_ACTIVE_BOOT_GC
 `;
     mainContent = earlyBindHeader + mainContent;
 
-    // 2) Close early pre-server before NestJS binds the port
+    // 2) Listen on internal port (3001) for the reverse proxy
     mainContent = mainContent.replace(
         /await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);/,
-        `if (typeof global.gc === 'function') {
-        try { global.gc(); } catch(e) {}
-    }
-    if (typeof _earlyServer !== 'undefined' && _earlyServer) {
-        if (typeof _earlyServer.closeAllConnections === 'function') {
-            _earlyServer.closeAllConnections();
-        }
-        await new Promise((resolve) => {
-            const _t = setTimeout(resolve, 300);
-            try { _earlyServer.close(() => { clearTimeout(_t); resolve(); }); } catch(e) { clearTimeout(_t); resolve(); }
-        });
-        console.log('[Zed] Handed port over to NestJS');
-    }
-    await app.listen(_earlyPort, '0.0.0.0');
-    console.log('[Zed] NestJS fully listening on ' + _earlyPort);
-    if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
+        `if (typeof _bootGcTimer !== 'undefined' && _bootGcTimer) {
         clearInterval(_bootGcTimer);
         _bootGcTimer = null;
     }
+    if (typeof global.gc === 'function') {
+        try { global.gc(); } catch(e) {}
+    }
+    const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
+    await app.listen(_nestPort, '0.0.0.0');
+    console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
     if (typeof global.gc === 'function') {
         try { global.gc(); } catch(e) {}
         const _m = process.memoryUsage();
@@ -1066,95 +1033,53 @@ function findFilesMatching(dir, pattern) {
     return results;
 }
 
-const EMPTY_MODULE = '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.default=class EmptyModule{};';
+const EMPTY_MODULE = `"use strict";
+const _emptyClass = class EmptyModule {};
+const _handler = {
+  get: function(target, prop) {
+    if (prop === '__esModule') return true;
+    if (prop === 'default') return _emptyClass;
+    if (prop in target) return target[prop];
+    return _emptyClass;
+  }
+};
+module.exports = new Proxy({ __esModule: true, default: _emptyClass }, _handler);`;
 
-// Stub messaging module files (BullMQ workers = ~60MB RAM each)
+// Stub messaging module (BullMQ workers = ~60MB RAM)
 for (const f of findFiles(SERVER_DIR, 'messaging.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.MessagingModule=class MessagingModule{};', 'utf8');
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
     console.log('[Zed] Stubbed messaging.module.js at:', f.replace(SERVER_DIR, ''));
 }
-for (const f of findFiles(SERVER_DIR, 'messaging-channel-sync-status.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-}
-for (const f of findFilesMatching(SERVER_DIR, /^messaging-.*\.module\.js$/)) {
-    try { fs.writeFileSync(f, EMPTY_MODULE, 'utf8'); } catch(e) {}
-}
 
-// Stub calendar module files
+// Stub calendar module
 for (const f of findFiles(SERVER_DIR, 'calendar.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.CalendarModule=class CalendarModule{};', 'utf8');
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
     console.log('[Zed] Stubbed calendar.module.js at:', f.replace(SERVER_DIR, ''));
 }
-for (const f of findFilesMatching(SERVER_DIR, /^calendar-.*\.module\.js$/)) {
-    try { fs.writeFileSync(f, EMPTY_MODULE, 'utf8'); } catch(e) {}
-}
 
-// Stub workflow / automation modules (heavy runtime)
-for (const f of findFiles(SERVER_DIR, 'workflow.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkflowModule=class WorkflowModule{};', 'utf8');
-    console.log('[Zed] Stubbed workflow.module.js at:', f.replace(SERVER_DIR, ''));
-}
-
-// Stub analytics
+// Stub analytics module
 for (const f of findFiles(SERVER_DIR, 'analytics.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.AnalyticsModule=class AnalyticsModule{};', 'utf8');
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
     console.log('[Zed] Stubbed analytics.module.js at:', f.replace(SERVER_DIR, ''));
 }
 for (const f of findFiles(SERVER_DIR, 'create-event.util.js')) {
     fs.writeFileSync(f, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.createEvent=()=>{};', 'utf8');
 }
 
-// Stub cron (already done above but find again for safety)
+// Stub cron module
 for (const f of findFiles(SERVER_DIR, 'cron.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.CronModule=class CronModule{};', 'utf8');
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
     console.log('[Zed] Stubbed cron.module.js at:', f.replace(SERVER_DIR, ''));
 }
 
-// Stub billing
+// Stub billing modules
 for (const f of findFilesMatching(SERVER_DIR, /^billing.*\.module\.js$/)) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.BillingModule=class BillingModule{};exports.BillingPortalModule=class BillingPortalModule{};', 'utf8');
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
     console.log('[Zed] Stubbed billing module at:', f.replace(SERVER_DIR, ''));
 }
 
-// Stub workspace migration/sync (very heavy - rebuilds metadata schema on boot)
-for (const f of findFiles(SERVER_DIR, 'workspace-migration-builder.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkspaceMigrationBuilderModule=class WorkspaceMigrationBuilderModule{};', 'utf8');
-    console.log('[Zed] Stubbed workspace-migration-builder.module.js');
-}
-for (const f of findFiles(SERVER_DIR, 'workspace-sync-metadata.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkspaceSyncMetadataModule=class WorkspaceSyncMetadataModule{};', 'utf8');
-    console.log('[Zed] Stubbed workspace-sync-metadata.module.js');
-}
-
-// === app.module.js: Nuclear regex that handles minified bundle patterns ===
-const appModulePath = path.join(SERVER_DIR, 'app.module.js');
-if (fs.existsSync(appModulePath)) {
-    let appMod = fs.readFileSync(appModulePath, 'utf8');
-    const before = appMod.length;
-    // Handle BOTH named exports (e.g. _messaging.MessagingModule) AND direct refs
-    // Also handle trailing comma or no comma (last item in array)
-    const heavyModuleNames = [
-        'MessagingModule', 'CalendarModule', 'AnalyticsModule',
-        'CronModule', 'BillingModule', 'BillingPortalModule',
-        'WorkflowModule', 'WorkspaceMigrationBuilderModule', 'WorkspaceSyncMetadataModule'
-    ];
-    for (const name of heavyModuleNames) {
-        // Pattern 1: someVar.ModuleName, (with optional trailing comma+whitespace)
-        appMod = appMod.replace(new RegExp(`[a-zA-Z0-9_$]+\\.${name}\\s*,?\\s*`, 'g'), '');
-        // Pattern 2: bare ModuleName, (when directly referenced)
-        appMod = appMod.replace(new RegExp(`\\b${name}\\b\\s*,?\\s*`, 'g'), '');
-    }
-    if (appMod.length !== before) {
-        fs.writeFileSync(appModulePath, appMod, 'utf8');
-        console.log('[Zed] Stripped heavy module imports from app.module.js! (saved ' + (before - appMod.length) + ' bytes)');
-    } else {
-        // Last resort: dump first 2000 chars so we can see the pattern for debugging
-        console.log('[Zed] app.module.js strip: pattern not matched. First 500 chars:', appMod.substring(0, 500));
-    }
-}
-
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
-console.log('[Zed] All heavy modules stubbed. Expected boot heap: <200MB.');
+console.log('[Zed] Heavy non-core modules stubbed safely with Proxy export. Expected boot heap: <220MB.');
 EOF
 
 # Run database self-healing for user verification and admin role allocation
@@ -1281,4 +1206,8 @@ const readyCheck = setInterval(() => {
 process.on('SIGTERM', () => { proxy.close(); process.exit(0); });
 process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
 PROXYEOF
+
 echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} → INTERNAL:3001)"
+ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node /tmp/zed-proxy.js &
+sleep 0.5
+echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."

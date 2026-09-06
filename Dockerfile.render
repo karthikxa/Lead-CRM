@@ -34,9 +34,7 @@ COPY branding/patch-branding.sh /app/patch-branding.sh
 
 EXPOSE 3000
 # ENTRYPOINT strategy:
-# 1. Run patch-branding.sh (patches files + writes /tmp/zed-proxy.js)
-# 2. Start proxy on PUBLIC port ($PORT = 10000 on Render) immediately — Render detects service
-# 3. NestJS runs on internal port 3001 (PORT/NODE_PORT overridden)
-# The proxy polls until NestJS is ready, then forwards all real traffic
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh && ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node /tmp/zed-proxy.js & sleep 0.5 && PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --expose-gc dist/main"]
+# 1. Run patch-branding.sh sequentially to patch files and start proxy daemon on PUBLIC port
+# 2. Exec NestJS on internal port 3001 in foreground as PID 1
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --expose-gc dist/main"]
 
