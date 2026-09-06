@@ -307,12 +307,13 @@ async function enforceAdmin(pg, schema) {
 }
 
 async function pollOnce() {
-  const pg = new Client({
-    connectionString: PG_URL,
-    ssl: (PG_URL.includes('sslmode=require') || PG_URL.includes('neon.tech')) ? { rejectUnauthorized: false } : undefined
-  });
-  await pg.connect();
+  let pg;
   try {
+    pg = new Client({
+      connectionString: PG_URL,
+      ssl: (PG_URL.includes('sslmode=require') || PG_URL.includes('neon.tech')) ? { rejectUnauthorized: false } : undefined
+    });
+    await pg.connect();
     const wsRes = await pg.query(`SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'workspace_%' LIMIT 1`);
     if (!wsRes.rows[0]) { console.log('[agency] no workspace schema'); return; }
     const schema = wsRes.rows[0].schema_name;
@@ -320,15 +321,17 @@ async function pollOnce() {
       try { await fn(pg, schema); } catch (e) { console.error('[agency] handler error', fn.name, e.message); }
     }
   } catch (e) {
-    console.error('[agency] poll error', e);
+    console.error('[agency] poll error:', e.message || e);
   } finally {
-    await pg.end();
+    if (pg) {
+      try { await pg.end(); } catch {}
+    }
   }
 }
 
 async function main() {
   console.log(`[agency] worker starting poll ${POLL_MS}ms SMTP ${SMTP_USER}->${EMAIL_TO} PG ${PG_URL.replace(/:.+@/,'://***@')}`);
-  await pollOnce();
+  try { await pollOnce(); } catch (e) { console.error('[agency] initial poll error:', e.message); }
   setInterval(pollOnce, POLL_MS);
 }
 
