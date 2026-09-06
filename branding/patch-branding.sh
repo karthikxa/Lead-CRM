@@ -379,11 +379,11 @@ const workspaceDomainsFile = path.join(SERVER_DIR, 'engine/core-modules/domain/w
 if (fs.existsSync(workspaceDomainsFile)) {
     let wsContent = fs.readFileSync(workspaceDomainsFile, 'utf8');
     wsContent = wsContent.replace(/getBaseUrl\(workspace\)\s*\{[\s\S]*?const customDomain = workspace\?\.customDomain;[\s\S]*?return `https:\/\/\${workspace\.subdomain}\.\${primaryDomain}`;\s*\}/, `getBaseUrl(workspace) {
-        const primaryDomain = this.twentyConfigService.get('SERVER_URL') || 'http://localhost:3000';
+        const primaryDomain = process.env.FRONTEND_URL || process.env.FRONT_BASE_URL || this.twentyConfigService.get('FRONTEND_URL') || this.twentyConfigService.get('SERVER_URL') || 'http://localhost:3000';
         return primaryDomain.replace(/\\/$/, '');
     }`);
     wsContent = wsContent.replace(/buildWorkspaceURL\(\{\s*workspace,\s*pathname = '',\s*searchParams,\s*subdomain,\s*\}\)\s*\{[\s\S]*?return url;\s*\}/, `buildWorkspaceURL({ workspace, pathname = '', searchParams }) {
-        const serverUrl = this.twentyConfigService.get('SERVER_URL') || 'http://localhost:3000';
+        const serverUrl = process.env.FRONTEND_URL || process.env.FRONT_BASE_URL || this.twentyConfigService.get('FRONTEND_URL') || this.twentyConfigService.get('SERVER_URL') || 'http://localhost:3000';
         const url = new URL(pathname.startsWith('/') ? pathname : '/' + pathname, serverUrl);
         if (searchParams) {
             for (const [key, value] of Object.entries(searchParams)) {
@@ -552,15 +552,6 @@ if (process.env.PATCH_FRONT_ASSETS === 'true') {
                 modified = true;
             }
 
-            if (f.startsWith('SignInUp')) {
-                content = content.replace(/c\.google&&\([0-9a-zA-Z_.]+\)\([0-9a-zA-Z_.]+,{action:"join-workspace"}\)/g, 'null');
-                content = content.replace(/\([0-9a-zA-Z_.]+\)\([0-9a-zA-Z_.]+,{action:"join-workspace"}\)/g, 'null');
-                content = content.replace(/t\.google&&\([0-9a-zA-Z_.]+\)\([0-9a-zA-Z_.]+,{action:"list-available-workspaces"/g, 'null&&false');
-                content = content.replace(/\([0-9a-zA-Z_.]+\)\([0-9a-zA-Z_.]+,{action:"list-available-workspaces"[^}]*\}\)/g, 'null');
-                content = content.replace(/\(c\.google\|\|c\.microsoft\|\|c\.sso\.length>0\)&&c\.password\?\([0-9a-zA-Z_.]+\)\([0-9a-zA-Z_.]+,{}\):null/g, 'null');
-                modified = true;
-                console.log('[Zed] Removed Google button from SignInUp asset:', f);
-            }
 
             if (f.startsWith('SettingsEnterprise')) {
                 content = content.replace(/\[v,ie\]=\(0,n\.useState\)\(null\),\[qe,Ee\]=\(0,n\.useState\)\(!1\)/g, '[v,ie]=(0,n.useState)({status:"active",licensee:"Zed Agency",expiresAt:new Date(Date.now()+315360000000),cancelAt:null,currentPeriodEnd:new Date(Date.now()+315360000000),isCancellationScheduled:!1}),[qe,Ee]=(0,n.useState)(!0)');
@@ -731,13 +722,6 @@ fs.writeFileSync(path.join(FRONT_DIR, 'favicon.svg'), ZED_SVG, 'utf8');
 // 10. Inject CSS
 const CUSTOM_HIDE_CSS = `
 <style id="zed-custom-clean">
-  /* Hide Google SSO button completely */
-  button:has(svg path[fill="#4285F4"]),
-  button:has(svg path[fill="#34A853"]),
-  button:has(svg path[fill="#FBBC05"]),
-  button:has(svg path[fill="#EA4335"]),
-  [data-testid*="google"],
-  a[href*="/auth/google"],
   .last-badge,
   div:has(> .last-badge),
   /* Completely hide Documentation menu & links in sidebar and settings */
@@ -1194,3 +1178,9 @@ echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} â†
 ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node /tmp/zed-proxy.js &
 sleep 0.5
 echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."
+
+if [ -f /app/scripts/agency-workflow-worker.js ]; then
+    echo "[Zed] Starting Agency Workflow Worker daemon..."
+    NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules node /app/scripts/agency-workflow-worker.js &
+fi
+

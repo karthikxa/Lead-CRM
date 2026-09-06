@@ -9,11 +9,14 @@ ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-# Disable ALL expensive background services to save RAM
-ENV DISABLE_MESSAGING_PROVIDER=true
-ENV DISABLE_CALENDAR_PROVIDER=true
-ENV IS_MESSAGING_ENABLED=false
-ENV IS_CALENDAR_ENABLED=false
+# Enable messaging and calendar providers
+ENV DISABLE_MESSAGING_PROVIDER=false
+ENV DISABLE_CALENDAR_PROVIDER=false
+ENV IS_MESSAGING_ENABLED=true
+ENV IS_CALENDAR_ENABLED=true
+ENV AUTH_GOOGLE_ENABLED=true
+ENV MESSAGING_PROVIDER_GMAIL_ENABLED=true
+ENV CALENDAR_PROVIDER_GOOGLE_ENABLED=true
 ENV TELEMETRY_ENABLED=false
 ENV TELEMETRY_ANONYMIZATION_ENABLED=false
 ENV DISABLE_BILLING=true
@@ -29,8 +32,9 @@ USER root
 # Install ultra-lightweight in-container Redis (~4MB RAM)
 RUN apk add --no-cache redis
 
-# patch-branding is copied into image for rebrand & clean port binding
+# Copy branding and workflow scripts into image
 COPY branding/patch-branding.sh /app/patch-branding.sh
+COPY scripts/agency-workflow-worker.js /app/scripts/agency-workflow-worker.js
 
 EXPOSE 3000
 # ENTRYPOINT strategy:

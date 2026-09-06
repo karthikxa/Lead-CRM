@@ -302,12 +302,15 @@ async function enforceAdmin(pg, schema) {
     const wsId = wsRes.rows[0]?.id;
     if (!wsId) return;
     // Demote any Admin not in allowlist
-    await pg.query(`UPDATE core."roleTarget" SET "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Member' LIMIT 1) WHERE "workspaceId"=$1 AND "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Admin' LIMIT 1) AND "userWorkspaceId" IN (SELECT uw.id FROM core."userWorkspace" uw JOIN core."user" u ON u.id=uw."userId" WHERE u.email NOT IN ('balunithyapriya@gmail.com','zedagencyofficial@gmail.com'))`, [wsId]);
+    await pg.query(`UPDATE core."roleTarget" SET "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Member' LIMIT 1) WHERE "workspaceId"=$1 AND "roleId" = (SELECT id FROM core."role" WHERE "workspaceId"=$1 AND label='Admin' LIMIT 1) AND "userWorkspaceId" IN (SELECT uw.id FROM core."userWorkspace" uw JOIN core."user" u ON u.id=uw."userId" WHERE u.email NOT IN ('balunithyapriya@gmail.com','zedagencyofficial@gmail.com','bkarthikeyan.cse2025@citchennai.net'))`, [wsId]);
   } catch (e) {}
 }
 
 async function pollOnce() {
-  const pg = new Client({ connectionString: PG_URL });
+  const pg = new Client({
+    connectionString: PG_URL,
+    ssl: (PG_URL.includes('sslmode=require') || PG_URL.includes('neon.tech')) ? { rejectUnauthorized: false } : undefined
+  });
   await pg.connect();
   try {
     const wsRes = await pg.query(`SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'workspace_%' LIMIT 1`);
