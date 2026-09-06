@@ -1030,86 +1030,131 @@ for (const dsFile of dataSourceFiles) {
 }
 console.log('[Zed] TypeORM pool size reduced to 2!');
 
-// [Zed] AGGRESSIVE MODULE STUBBING - Disable heavy modules before NestJS loads them
-// These are compiled & registered during bootstrap, eating hundreds of MB
-
-// Stub out BullMQ-heavy job processors (Worker instances eat ~30-80MB each)
-const heavyWorkerFiles = [
-    path.join(SERVER_DIR, 'engine/core-modules/messaging/messaging.module.js'),
-    path.join(SERVER_DIR, 'engine/core-modules/calendar/calendar.module.js'),
-    path.join(SERVER_DIR, 'engine/workspace-manager/workspace-migration-builder/workspace-migration-builder.module.js'),
-    path.join(SERVER_DIR, 'engine/workspace-manager/workspace-sync-metadata/workspace-sync-metadata.module.js'),
-];
-for (const wf of heavyWorkerFiles) {
-    if (fs.existsSync(wf)) {
-        const className = path.basename(wf, '.js').replace(/-([a-z])/g, (_, l) => l.toUpperCase()).replace(/^(.)/, c => c.toUpperCase());
-        const stubContent = `"use strict";\nObject.defineProperty(exports, "__esModule", { value: true });\nconst common_1 = require("@nestjs/common");\nlet ${className} = class ${className} {};\n${className} = __decorate([common_1.Module({imports:[],providers:[],exports:[]})], ${className});\nexports.${className} = ${className};\nfunction __decorate(decorators, target) { return target; }\n`;
-        fs.writeFileSync(wf, stubContent, 'utf8');
-        console.log('[Zed] Stubbed heavy module:', path.basename(wf));
-    }
+// [Zed] AGGRESSIVE MODULE STUBBING - Find actual files regardless of path
+// Use readdirSync recursively to find module files wherever they are
+function findFiles(dir, filename) {
+    const results = [];
+    if (!fs.existsSync(dir)) return results;
+    try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const e of entries) {
+            const full = path.join(dir, e.name);
+            if (e.isDirectory()) {
+                results.push(...findFiles(full, filename));
+            } else if (e.name === filename) {
+                results.push(full);
+            }
+        }
+    } catch (e) {}
+    return results;
 }
 
-// Stub out analytics/telemetry modules
-const analyticsFiles = [
-    path.join(SERVER_DIR, 'engine/core-modules/analytics/analytics.module.js'),
-    path.join(SERVER_DIR, 'engine/core-modules/analytics/utils/create-event.util.js'),
-];
-for (const af of analyticsFiles) {
-    if (fs.existsSync(af)) {
-        fs.writeFileSync(af, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.AnalyticsModule=class AnalyticsModule{};exports.createEvent=()=>{};', 'utf8');
-        console.log('[Zed] Stubbed analytics:', path.basename(af));
-    }
+function findFilesMatching(dir, pattern) {
+    const results = [];
+    if (!fs.existsSync(dir)) return results;
+    try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const e of entries) {
+            const full = path.join(dir, e.name);
+            if (e.isDirectory()) {
+                results.push(...findFilesMatching(full, pattern));
+            } else if (pattern.test(e.name)) {
+                results.push(full);
+            }
+        }
+    } catch (e) {}
+    return results;
 }
 
-// Neutralize the scheduler decorators (they create bullmq queues on import)
-const schedulerFile = path.join(SERVER_DIR, 'engine/core-modules/cron/cron.module.js');
-if (fs.existsSync(schedulerFile)) {
-    fs.writeFileSync(schedulerFile, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.CronModule=class CronModule{};', 'utf8');
-    console.log('[Zed] Stubbed CronModule!');
+const EMPTY_MODULE = '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.default=class EmptyModule{};';
+
+// Stub messaging module files (BullMQ workers = ~60MB RAM each)
+for (const f of findFiles(SERVER_DIR, 'messaging.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.MessagingModule=class MessagingModule{};', 'utf8');
+    console.log('[Zed] Stubbed messaging.module.js at:', f.replace(SERVER_DIR, ''));
+}
+for (const f of findFiles(SERVER_DIR, 'messaging-channel-sync-status.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
+}
+for (const f of findFilesMatching(SERVER_DIR, /^messaging-.*\.module\.js$/)) {
+    try { fs.writeFileSync(f, EMPTY_MODULE, 'utf8'); } catch(e) {}
 }
 
-// Stub billing module (calls external APIs during init)
-const billingFiles = [
-    path.join(SERVER_DIR, 'engine/core-modules/billing/billing.module.js'),
-    path.join(SERVER_DIR, 'engine/core-modules/billing/billing-portal.module.js'),
-];
-for (const bf of billingFiles) {
-    if (fs.existsSync(bf)) {
-        fs.writeFileSync(bf, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.BillingModule=class BillingModule{};exports.BillingPortalModule=class BillingPortalModule{};', 'utf8');
-        console.log('[Zed] Stubbed billing module:', path.basename(bf));
-    }
+// Stub calendar module files
+for (const f of findFiles(SERVER_DIR, 'calendar.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.CalendarModule=class CalendarModule{};', 'utf8');
+    console.log('[Zed] Stubbed calendar.module.js at:', f.replace(SERVER_DIR, ''));
+}
+for (const f of findFilesMatching(SERVER_DIR, /^calendar-.*\.module\.js$/)) {
+    try { fs.writeFileSync(f, EMPTY_MODULE, 'utf8'); } catch(e) {}
 }
 
-// Strip heavy module imports from app.module.js to prevent them loading at all
-// This is the nuclear option - removes the actual import() calls for memory-heavy subsystems
+// Stub workflow / automation modules (heavy runtime)
+for (const f of findFiles(SERVER_DIR, 'workflow.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkflowModule=class WorkflowModule{};', 'utf8');
+    console.log('[Zed] Stubbed workflow.module.js at:', f.replace(SERVER_DIR, ''));
+}
+
+// Stub analytics
+for (const f of findFiles(SERVER_DIR, 'analytics.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.AnalyticsModule=class AnalyticsModule{};', 'utf8');
+    console.log('[Zed] Stubbed analytics.module.js at:', f.replace(SERVER_DIR, ''));
+}
+for (const f of findFiles(SERVER_DIR, 'create-event.util.js')) {
+    fs.writeFileSync(f, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.createEvent=()=>{};', 'utf8');
+}
+
+// Stub cron (already done above but find again for safety)
+for (const f of findFiles(SERVER_DIR, 'cron.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.CronModule=class CronModule{};', 'utf8');
+    console.log('[Zed] Stubbed cron.module.js at:', f.replace(SERVER_DIR, ''));
+}
+
+// Stub billing
+for (const f of findFilesMatching(SERVER_DIR, /^billing.*\.module\.js$/)) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.BillingModule=class BillingModule{};exports.BillingPortalModule=class BillingPortalModule{};', 'utf8');
+    console.log('[Zed] Stubbed billing module at:', f.replace(SERVER_DIR, ''));
+}
+
+// Stub workspace migration/sync (very heavy - rebuilds metadata schema on boot)
+for (const f of findFiles(SERVER_DIR, 'workspace-migration-builder.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkspaceMigrationBuilderModule=class WorkspaceMigrationBuilderModule{};', 'utf8');
+    console.log('[Zed] Stubbed workspace-migration-builder.module.js');
+}
+for (const f of findFiles(SERVER_DIR, 'workspace-sync-metadata.module.js')) {
+    fs.writeFileSync(f, EMPTY_MODULE + '\nexports.WorkspaceSyncMetadataModule=class WorkspaceSyncMetadataModule{};', 'utf8');
+    console.log('[Zed] Stubbed workspace-sync-metadata.module.js');
+}
+
+// === app.module.js: Nuclear regex that handles minified bundle patterns ===
 const appModulePath = path.join(SERVER_DIR, 'app.module.js');
 if (fs.existsSync(appModulePath)) {
     let appMod = fs.readFileSync(appModulePath, 'utf8');
     const before = appMod.length;
-    // Remove MessagingModule from imports array
-    appMod = appMod.replace(/_messaging\.MessagingModule,?\s*/g, '');
-    appMod = appMod.replace(/_calendar\.CalendarModule,?\s*/g, '');
-    appMod = appMod.replace(/_analytics\.AnalyticsModule,?\s*/g, '');
-    appMod = appMod.replace(/_cron\.CronModule,?\s*/g, '');
-    appMod = appMod.replace(/_billing\.BillingModule,?\s*/g, '');
-    appMod = appMod.replace(/_billing\.BillingPortalModule,?\s*/g, '');
-    // Also try camelCase patterns used in different build outputs
-    appMod = appMod.replace(/MessagingModule,?\s*/g, '');
-    appMod = appMod.replace(/CalendarModule,?\s*/g, '');
-    appMod = appMod.replace(/AnalyticsModule,?\s*/g, '');
-    appMod = appMod.replace(/CronModule,?\s*/g, '');
-    appMod = appMod.replace(/BillingModule,?\s*/g, '');
-    appMod = appMod.replace(/BillingPortalModule,?\s*/g, '');
+    // Handle BOTH named exports (e.g. _messaging.MessagingModule) AND direct refs
+    // Also handle trailing comma or no comma (last item in array)
+    const heavyModuleNames = [
+        'MessagingModule', 'CalendarModule', 'AnalyticsModule',
+        'CronModule', 'BillingModule', 'BillingPortalModule',
+        'WorkflowModule', 'WorkspaceMigrationBuilderModule', 'WorkspaceSyncMetadataModule'
+    ];
+    for (const name of heavyModuleNames) {
+        // Pattern 1: someVar.ModuleName, (with optional trailing comma+whitespace)
+        appMod = appMod.replace(new RegExp(`[a-zA-Z0-9_$]+\\.${name}\\s*,?\\s*`, 'g'), '');
+        // Pattern 2: bare ModuleName, (when directly referenced)
+        appMod = appMod.replace(new RegExp(`\\b${name}\\b\\s*,?\\s*`, 'g'), '');
+    }
     if (appMod.length !== before) {
         fs.writeFileSync(appModulePath, appMod, 'utf8');
-        console.log('[Zed] Stripped heavy module imports from app.module.js (saved ' + (before - appMod.length) + ' bytes)!');
+        console.log('[Zed] Stripped heavy module imports from app.module.js! (saved ' + (before - appMod.length) + ' bytes)');
     } else {
-        console.log('[Zed] app.module.js: no heavy module imports found to strip (already clean or different pattern).');
+        // Last resort: dump first 2000 chars so we can see the pattern for debugging
+        console.log('[Zed] app.module.js strip: pattern not matched. First 500 chars:', appMod.substring(0, 500));
     }
 }
 
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
-console.log('[Zed] All heavy modules stubbed out. NestJS will bootstrap with minimal RAM footprint.');
+console.log('[Zed] All heavy modules stubbed. Expected boot heap: <200MB.');
 EOF
 
 # Run database self-healing for user verification and admin role allocation
