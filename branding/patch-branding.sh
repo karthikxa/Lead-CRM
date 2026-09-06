@@ -5,6 +5,35 @@ set -e
 FRONT_DIR="/app/packages/twenty-server/dist/front"
 SERVER_DIR="/app/packages/twenty-server/dist"
 
+# 0. Start in-container ultra-lightweight Redis daemon (capped at 32MB max, consumes ~4MB RAM)
+if command -v redis-server >/dev/null 2>&1; then
+    mkdir -p /var/log/redis /var/lib/redis
+    redis-server --daemonize yes \
+                 --port 6379 \
+                 --bind 127.0.0.1 \
+                 --save "" \
+                 --appendonly no \
+                 --maxmemory 32mb \
+                 --maxmemory-policy allkeys-lru \
+                 --loglevel warning
+    echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 (maxmemory: 32mb)"
+else
+    echo "[Zed] Installing redis via apk..."
+    apk add --no-cache redis || true
+    if command -v redis-server >/dev/null 2>&1; then
+        mkdir -p /var/log/redis /var/lib/redis
+        redis-server --daemonize yes \
+                     --port 6379 \
+                     --bind 127.0.0.1 \
+                     --save "" \
+                     --appendonly no \
+                     --maxmemory 32mb \
+                     --maxmemory-policy allkeys-lru \
+                     --loglevel warning
+        echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 after apk add"
+    fi
+fi
+
 echo "[Zed] Applying Single-Domain Redirects, Direct Google Auth & Branding patch..."
 
 node --max-old-space-size=128 - << 'EOF'
@@ -878,6 +907,48 @@ if (fs.existsSync(indexHtmlFile)) {
     fs.writeFileSync(indexHtmlFile, htmlContent, 'utf8');
 }
 
+// 15. Fallback patches for cacheStorage, sessionStorage, and redisClient
+const cacheFactoryFile = path.join(SERVER_DIR, 'engine/core-modules/cache-storage/cache-storage.module-factory.js');
+if (fs.existsSync(cacheFactoryFile)) {
+    let cfContent = fs.readFileSync(cacheFactoryFile, 'utf8');
+    cfContent = cfContent.replace(
+        /const redisUrl = (?:this\.)?twentyConfigService\.get\('REDIS_URL'\);/g,
+        "const redisUrl = twentyConfigService.get('REDIS_URL') || 'redis://127.0.0.1:6379';"
+    );
+    cfContent = cfContent.replace(
+        /const redisUrl = (?:_)?twentyConfigService\.get\('REDIS_URL'\);/g,
+        "const redisUrl = twentyConfigService.get('REDIS_URL') || 'redis://127.0.0.1:6379';"
+    );
+    fs.writeFileSync(cacheFactoryFile, cfContent, 'utf8');
+    console.log('[Zed] Patched cacheStorageModuleFactory fallback to local Redis!');
+}
+
+const sessionFactoryFile = path.join(SERVER_DIR, 'engine/core-modules/session-storage/session-storage.module-factory.js');
+if (fs.existsSync(sessionFactoryFile)) {
+    let sfContent = fs.readFileSync(sessionFactoryFile, 'utf8');
+    sfContent = sfContent.replace(
+        /const connectionString = (?:_)?twentyConfigService\.get\('REDIS_URL'\);/g,
+        "const connectionString = twentyConfigService.get('REDIS_URL') || 'redis://127.0.0.1:6379';"
+    );
+    fs.writeFileSync(sessionFactoryFile, sfContent, 'utf8');
+    console.log('[Zed] Patched sessionStorageModuleFactory fallback to local Redis!');
+}
+
+const redisClientFile = path.join(SERVER_DIR, 'engine/core-modules/redis-client/redis-client.service.js');
+if (fs.existsSync(redisClientFile)) {
+    let rcContent = fs.readFileSync(redisClientFile, 'utf8');
+    rcContent = rcContent.replace(
+        /const redisUrl = this\.twentyConfigService\.get\('REDIS_URL'\);/g,
+        "const redisUrl = this.twentyConfigService.get('REDIS_URL') || 'redis://127.0.0.1:6379';"
+    );
+    rcContent = rcContent.replace(
+        /const redisQueueUrl = [\s\S]*?this\.twentyConfigService\.get\('REDIS_URL'\);/g,
+        "const redisQueueUrl = this.twentyConfigService.get('REDIS_QUEUE_URL') || this.twentyConfigService.get('REDIS_URL') || 'redis://127.0.0.1:6379';"
+    );
+    fs.writeFileSync(redisClientFile, rcContent, 'utf8');
+    console.log('[Zed] Patched RedisClientService fallback to local Redis!');
+}
+
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 
 EOF
@@ -915,5 +986,5 @@ async function repairDB() {
 }
 repairDB();
 DBEOF
-NODE_PATH=/app/node_modules node /tmp/repair-db.js
+NODE_PATH=/app/node_modules node --max-old-space-size=64 /tmp/repair-db.js
 rm -f /tmp/repair-db.js

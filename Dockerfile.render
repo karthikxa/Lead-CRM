@@ -1,18 +1,25 @@
 # Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: 460MB heap with --expose-gc + MALLOC_ARENA_MAX=2 saves native RAM
-ENV NODE_OPTIONS="--max-old-space-size=460 --expose-gc"
+# 512MB Render Free: 380MB heap with --expose-gc + MALLOC_ARENA_MAX=2 saves native RAM
+ENV NODE_OPTIONS="--max-old-space-size=380 --expose-gc"
 ENV MALLOC_ARENA_MAX=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
 ENV PORT=3000
 ENV NODE_PORT=3000
+ENV REDIS_URL=redis://127.0.0.1:6379
+ENV REDIS_QUEUE_URL=redis://127.0.0.1:6379
+ENV CACHE_STORAGE_TYPE=redis
 
 USER root
+# Install ultra-lightweight in-container Redis (consumes ~4MB RAM)
+RUN apk add --no-cache redis
+
 # patch-branding is copied into image for rebrand & clean port binding
 COPY branding/patch-branding.sh /app/patch-branding.sh
 
 EXPOSE 3000
 ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
+
