@@ -1,20 +1,24 @@
-# Zed Render 512MB optimized — single web service runs UI + API + cron (no separate worker)
+# Zed Render 512MB optimized — single web service, ultra-low memory footprint
 FROM twentycrm/twenty:latest
 
-# 512MB Render Free: 440MB heap (safe buffer with active GC) with --expose-gc
-ENV NODE_OPTIONS="--max-old-space-size=440 --expose-gc"
+# NOTE: --expose-gc must be a NODE arg, NOT in NODE_OPTIONS (Render strips it).
+# We pass it directly via ENTRYPOINT below. NODE_OPTIONS only gets heap limit.
+ENV NODE_OPTIONS="--max-old-space-size=380"
 ENV MALLOC_ARENA_MAX=2
 ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
 ENV DISABLE_DB_MIGRATIONS=true
 ENV DISABLE_CRON_JOBS_REGISTRATION=true
-# Disable expensive background services to save RAM
+# Disable ALL expensive background services to save RAM
 ENV DISABLE_MESSAGING_PROVIDER=true
 ENV DISABLE_CALENDAR_PROVIDER=true
 ENV IS_MESSAGING_ENABLED=false
 ENV IS_CALENDAR_ENABLED=false
 ENV TELEMETRY_ENABLED=false
 ENV TELEMETRY_ANONYMIZATION_ENABLED=false
+ENV DISABLE_BILLING=true
+ENV IS_BILLING_ENABLED=false
+ENV IS_AI_ENABLED=false
 ENV PORT=3000
 ENV NODE_PORT=3000
 ENV REDIS_URL=redis://127.0.0.1:6379
@@ -22,12 +26,13 @@ ENV REDIS_QUEUE_URL=redis://127.0.0.1:6379
 ENV CACHE_STORAGE_TYPE=redis
 
 USER root
-# Install ultra-lightweight in-container Redis (consumes ~4MB RAM)
+# Install ultra-lightweight in-container Redis (~4MB RAM)
 RUN apk add --no-cache redis
 
 # patch-branding is copied into image for rebrand & clean port binding
 COPY branding/patch-branding.sh /app/patch-branding.sh
 
 EXPOSE 3000
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
+# CRITICAL: --expose-gc passed directly to node (not via NODE_OPTIONS which Render may reject)
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node --expose-gc dist/main"]
 
