@@ -847,8 +847,14 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject clean boot logging at the very top of main.js
+    // 1) Inject clean boot logging and global error traps at the very top of main.js
     const earlyBindHeader = `// [Zed] ACTIVE_BOOT
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Zed ERROR] Unhandled Rejection:', reason && (reason.stack || reason.message || reason));
+});
+process.on('uncaughtException', (err) => {
+    console.error('[Zed ERROR] Uncaught Exception:', err && (err.stack || err.message || err));
+});
 console.log('[Zed] NestJS runtime bootstrap starting...');
 // [Zed] END_ACTIVE_BOOT
 `;
@@ -866,7 +872,7 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
             console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
         }`
     );
-    mainContent = mainContent.replace('void bootstrap();', 'bootstrap().catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
+    mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
 
@@ -986,41 +992,7 @@ function findFilesMatching(dir, pattern) {
     return results;
 }
 
-const EMPTY_MODULE = `"use strict";
-const _emptyClass = class EmptyModule {};
-const _handler = {
-  get: function(target, prop) {
-    if (prop === '__esModule') return true;
-    if (prop === 'default') return _emptyClass;
-    if (prop in target) return target[prop];
-    return _emptyClass;
-  }
-};
-module.exports = new Proxy({ __esModule: true, default: _emptyClass }, _handler);`;
-
-// Stub messaging module (BullMQ workers = ~60MB RAM)
-for (const f of findFiles(SERVER_DIR, 'messaging.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-    console.log('[Zed] Stubbed messaging.module.js at:', f.replace(SERVER_DIR, ''));
-}
-
-// Stub calendar module
-for (const f of findFiles(SERVER_DIR, 'calendar.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-    console.log('[Zed] Stubbed calendar.module.js at:', f.replace(SERVER_DIR, ''));
-}
-
-// Stub analytics module
-for (const f of findFiles(SERVER_DIR, 'analytics.module.js')) {
-    fs.writeFileSync(f, EMPTY_MODULE, 'utf8');
-    console.log('[Zed] Stubbed analytics.module.js at:', f.replace(SERVER_DIR, ''));
-}
-for (const f of findFiles(SERVER_DIR, 'create-event.util.js')) {
-    fs.writeFileSync(f, '"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.createEvent=()=>{};', 'utf8');
-}
-
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
-console.log('[Zed] Heavy non-core modules stubbed safely with Proxy export. Expected boot heap: <220MB.');
 EOF
 
 # Run database self-healing for user verification and admin role allocation
