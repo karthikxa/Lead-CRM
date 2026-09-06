@@ -1192,3 +1192,93 @@ repairDB();
 DBEOF
 NODE_PATH=/app/node_modules node --max-old-space-size=64 /tmp/repair-db.js
 rm -f /tmp/repair-db.js
+
+# ============================================================
+# Write the Zed reverse proxy — binds on PUBLIC port immediately
+# so Render detects the service, then proxies to NestJS on 3001
+# ============================================================
+cat > /tmp/zed-proxy.js << 'PROXYEOF'
+const http = require('http');
+const net = require('net');
+
+const PUBLIC_PORT = Number(process.env.ZED_PUBLIC_PORT || process.env.PORT || 10000);
+const NEST_PORT = Number(process.env.ZED_INTERNAL_PORT || 3001);
+let nestReady = false;
+const startTime = Date.now();
+
+function elapsed() { return Math.round((Date.now() - startTime) / 1000) + 's'; }
+
+// HTTP reverse proxy
+const proxy = http.createServer((clientReq, clientRes) => {
+  if (!nestReady) {
+    // Return 200 so Render marks service as live
+    clientRes.writeHead(200, { 'Content-Type': 'text/plain', 'X-Zed-Status': 'starting' });
+    clientRes.end('Zed CRM is starting...');
+    return;
+  }
+
+  const options = {
+    hostname: '127.0.0.1',
+    port: NEST_PORT,
+    path: clientReq.url,
+    method: clientReq.method,
+    headers: { ...clientReq.headers, host: '127.0.0.1:' + NEST_PORT }
+  };
+
+  const proxyReq = http.request(options, proxyRes => {
+    clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(clientRes, { end: true });
+  });
+
+  proxyReq.on('error', err => {
+    if (!clientRes.headersSent) {
+      clientRes.writeHead(502, { 'Content-Type': 'text/plain' });
+    }
+    clientRes.end('Gateway error: ' + err.message);
+  });
+
+  clientReq.pipe(proxyReq, { end: true });
+});
+
+// Handle WebSocket upgrades (Twenty CRM uses WS for real-time)
+proxy.on('upgrade', (req, socket, head) => {
+  if (!nestReady) { socket.destroy(); return; }
+  const conn = net.createConnection(NEST_PORT, '127.0.0.1', () => {
+    conn.write('GET ' + req.url + ' HTTP/1.1\r\nHost: 127.0.0.1:' + NEST_PORT + '\r\n' +
+      Object.entries(req.headers).map(([k,v]) => k + ': ' + v).join('\r\n') +
+      '\r\n\r\n');
+    conn.write(head);
+    socket.pipe(conn);
+    conn.pipe(socket);
+  });
+  conn.on('error', () => socket.destroy());
+});
+
+proxy.listen(PUBLIC_PORT, '0.0.0.0', () => {
+  console.log('[Zed-Proxy] Bound on PUBLIC port ' + PUBLIC_PORT + ' — Render health check will pass immediately');
+});
+
+proxy.on('error', err => {
+  console.error('[Zed-Proxy] Error:', err.message);
+});
+
+// Poll for NestJS readiness every 3 seconds
+const readyCheck = setInterval(() => {
+  const t = net.createConnection(NEST_PORT, '127.0.0.1');
+  t.setTimeout(1000);
+  t.on('connect', () => {
+    t.destroy();
+    if (!nestReady) {
+      nestReady = true;
+      clearInterval(readyCheck);
+      console.log('[Zed-Proxy] NestJS ready on port ' + NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic');
+    }
+  });
+  t.on('error', () => t.destroy());
+  t.on('timeout', () => t.destroy());
+}, 3000);
+
+process.on('SIGTERM', () => { proxy.close(); process.exit(0); });
+process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
+PROXYEOF
+echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} → INTERNAL:3001)"
