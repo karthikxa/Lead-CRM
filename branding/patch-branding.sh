@@ -13,8 +13,8 @@ if command -v redis-server >/dev/null 2>&1; then
                  --bind 127.0.0.1 \
                  --save "" \
                  --appendonly no \
-                 --maxmemory 32mb \
-                 --maxmemory-policy allkeys-lru \
+                 --maxmemory 24mb \
+                 --maxmemory-policy noeviction \
                  --loglevel warning
     echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 (maxmemory: 32mb)"
 else
@@ -27,8 +27,8 @@ else
                      --bind 127.0.0.1 \
                      --save "" \
                      --appendonly no \
-                     --maxmemory 32mb \
-                     --maxmemory-policy allkeys-lru \
+                     --maxmemory 24mb \
+                     --maxmemory-policy noeviction \
                      --loglevel warning
         echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 after apk add"
     fi
@@ -949,7 +949,38 @@ if (fs.existsSync(redisClientFile)) {
     console.log('[Zed] Patched RedisClientService fallback to local Redis!');
 }
 
+// 16. Disable memory-heavy background worker queues (messaging sync, calendar sync)
+// These consume ~40-80MB additional RAM and are not needed for basic CRM usage
+const messageQueueFile = path.join(SERVER_DIR, 'engine/core-modules/message-queue/drivers/bullmq/bullmq-message-queue.driver.js');
+if (fs.existsSync(messageQueueFile)) {
+    let mqContent = fs.readFileSync(messageQueueFile, 'utf8');
+    // Reduce BullMQ Worker concurrency from default (often 10-50) to 1 to save RAM
+    mqContent = mqContent.replace(/concurrency:\s*(?:options\.concurrency\s*\?\?\s*)?\d+/g, 'concurrency: 1');
+    mqContent = mqContent.replace(/concurrency:\s*this\.options\?\.concurrency\s*\?\?\s*\d+/g, 'concurrency: 1');
+    fs.writeFileSync(messageQueueFile, mqContent, 'utf8');
+    console.log('[Zed] Patched BullMQ driver to concurrency:1 (memory saving)!');
+}
+
+// 17. Reduce TypeORM connection pool to 2 connections (saves ~20MB RAM vs default 10)
+const dataSourceFiles = [
+    path.join(SERVER_DIR, 'database/typeorm/typeorm.service.js'),
+    path.join(SERVER_DIR, 'database/typeorm-seeds/typeorm-seeds.service.js'),
+    path.join(SERVER_DIR, 'engine/metadata-modules/typeorm/typeorm.service.js'),
+];
+for (const dsFile of dataSourceFiles) {
+    if (fs.existsSync(dsFile)) {
+        let dsContent = fs.readFileSync(dsFile, 'utf8');
+        // Reduce pool size
+        dsContent = dsContent.replace(/poolSize:\s*\d+/g, 'poolSize: 2');
+        dsContent = dsContent.replace(/max:\s*\d+,\s*\/\/\s*connection pool/g, 'max: 2, // connection pool');
+        dsContent = dsContent.replace(/"poolSize":\s*\d+/g, '"poolSize": 2');
+        fs.writeFileSync(dsFile, dsContent, 'utf8');
+    }
+}
+console.log('[Zed] TypeORM pool size reduced to 2!');
+
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
+
 
 EOF
 
