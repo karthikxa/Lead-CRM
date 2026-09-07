@@ -4,6 +4,8 @@
 // Email via SMTP (zedagencyofficial@gmail.com), Calendar via DB insert + optional Google API
 // Moves: Not Attended→Task(3h), FollowUp→Task(1d), Schedule→Opportunity, Booked→Email+Calendar, Rejected→Keep in People (per user request, not archived)
 
+const dns = require('dns');
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 const { Client } = require('pg');
 const nodemailer = require('nodemailer');
 

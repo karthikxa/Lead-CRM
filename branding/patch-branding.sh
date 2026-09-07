@@ -13,10 +13,10 @@ if command -v redis-server >/dev/null 2>&1; then
                  --bind 127.0.0.1 \
                  --save "" \
                  --appendonly no \
-                 --maxmemory 24mb \
+                 --maxmemory 12mb \
                  --maxmemory-policy noeviction \
                  --loglevel warning
-    echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 (maxmemory: 32mb)"
+    echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 (maxmemory: 12mb)"
 else
     echo "[Zed] Installing redis via apk..."
     apk add --no-cache redis || true
@@ -27,7 +27,7 @@ else
                      --bind 127.0.0.1 \
                      --save "" \
                      --appendonly no \
-                     --maxmemory 24mb \
+                     --maxmemory 12mb \
                      --maxmemory-policy noeviction \
                      --loglevel warning
         echo "[Zed] In-container Redis daemon started on 127.0.0.1:6379 after apk add"
@@ -43,6 +43,8 @@ fi
 echo "[Zed] Applying Single-Domain Redirects, Direct Google Auth & Branding patch..."
 
 node --max-old-space-size=128 - << 'EOF'
+const dns = require('dns');
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -849,6 +851,8 @@ if (fs.existsSync(mainFile)) {
 
     // 1) Inject clean boot logging and global error traps at the very top of main.js
     const earlyBindHeader = `// [Zed] ACTIVE_BOOT
+const dns = require('dns');
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[Zed ERROR] Unhandled Rejection:', reason && (reason.stack || reason.message || reason));
 });
@@ -997,12 +1001,17 @@ EOF
 
 # Run database self-healing for user verification and admin role allocation
 cat << 'DBEOF' > /tmp/repair-db.js
+const dns = require('dns');
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
 const { Client } = require('pg');
 const crypto = require('crypto');
 
 async function repairDB() {
   const dbUrl = process.env.PG_DATABASE_URL || 'postgresql://' + (process.env.PG_DATABASE_USER || 'postgres') + ':' + (process.env.PG_DATABASE_PASSWORD || '0d8ff9694687b3817867b2fc95511775') + '@' + (process.env.PG_DATABASE_HOST || 'db') + ':' + (process.env.PG_DATABASE_PORT || '5432') + '/' + (process.env.PG_DATABASE_NAME || 'default');
-  const client = new Client({ connectionString: dbUrl });
+  const client = new Client({
+    connectionString: dbUrl,
+    ssl: (dbUrl.includes('sslmode=require') || dbUrl.includes('neon.tech')) ? { rejectUnauthorized: false } : undefined
+  });
   try {
     await client.connect();
     await client.query('UPDATE core."user" SET "isEmailVerified" = true');
@@ -1147,12 +1156,12 @@ process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
 PROXYEOF
 
 echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} → INTERNAL:3001)"
-ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node /tmp/zed-proxy.js &
+ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=32 /tmp/zed-proxy.js &
 sleep 0.5
 echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."
 
 if [ -f /app/scripts/agency-workflow-worker.js ]; then
     echo "[Zed] Starting Agency Workflow Worker daemon..."
-    NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules node /app/scripts/agency-workflow-worker.js &
+    NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules node --max-old-space-size=48 /app/scripts/agency-workflow-worker.js &
 fi
 
