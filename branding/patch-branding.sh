@@ -891,7 +891,7 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject clean boot logging and global error traps at the very top of main.js
+    // 1) Inject clean boot logging, memory watchdog, and global error traps at the very top of main.js
     const earlyBindHeader = `// [Zed] ACTIVE_BOOT
 const dns = require('dns');
 if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
@@ -901,6 +901,15 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
     console.error('[Zed ERROR] Uncaught Exception:', err && (err.stack || err.message || err));
 });
+// Zed Memory Watchdog for 512MB RAM tier
+setInterval(() => {
+  if (typeof global.gc === 'function') {
+    const mem = process.memoryUsage();
+    if (mem.rss > 410 * 1024 * 1024 || mem.heapUsed > 320 * 1024 * 1024) {
+      try { global.gc(); } catch (e) {}
+    }
+  }
+}, 5000);
 console.log('[Zed] NestJS runtime bootstrap starting...');
 // [Zed] END_ACTIVE_BOOT
 `;
@@ -1025,28 +1034,6 @@ if (fs.existsSync(modulesModuleFile)) {
     mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?OnboardingInviteSuggestionsModule\s*,?/g, '');
     fs.writeFileSync(modulesModuleFile, mmContent, 'utf8');
     console.log('[Zed] Patched modules.module.js: stripped Messaging & Calendar modules completely (saves ~100MB heap)!');
-}
-
-// 0c. Inject proactive memory manager into main.js
-const mainFile = path.join(SERVER_DIR, 'main.js');
-if (fs.existsSync(mainFile)) {
-    let mainContent = fs.readFileSync(mainFile, 'utf8');
-    if (!mainContent.includes('// Zed Memory Watchdog')) {
-        const watchdog = `
-// Zed Memory Watchdog
-setInterval(() => {
-  if (typeof global.gc === 'function') {
-    const mem = process.memoryUsage();
-    if (mem.rss > 410 * 1024 * 1024 || mem.heapUsed > 320 * 1024 * 1024) {
-      try { global.gc(); } catch (e) {}
-    }
-  }
-}, 5000);
-`;
-        mainContent = watchdog + mainContent;
-        fs.writeFileSync(mainFile, mainContent, 'utf8');
-        console.log('[Zed] Patched main.js: injected proactive memory watchdog!');
-    }
 }
 
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
