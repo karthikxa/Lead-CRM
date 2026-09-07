@@ -35,6 +35,7 @@ RUN apk add --no-cache redis
 # Copy branding and workflow scripts into image
 COPY branding/patch-branding.sh /app/patch-branding.sh
 COPY scripts/agency-workflow-worker.js /app/scripts/agency-workflow-worker.js
+COPY scripts/zed-luxury-email.js /app/scripts/zed-luxury-email.js
 
 EXPOSE 3000
 # ENTRYPOINT strategy:

@@ -20,7 +20,16 @@ const POLL_MS = parseInt(process.env.AGENCY_POLL_MS || '15000', 10);
 
 const https = require('https');
 const crypto = require('crypto');
-const { generateLeadNotificationEmail, generateDueDateNotificationEmail } = require('./zed-luxury-email.js');
+let generateLeadNotificationEmail, generateDueDateNotificationEmail;
+try {
+  const luxuryEmail = require('./zed-luxury-email.js');
+  generateLeadNotificationEmail = luxuryEmail.generateLeadNotificationEmail;
+  generateDueDateNotificationEmail = luxuryEmail.generateDueDateNotificationEmail;
+} catch (e) {
+  console.error('[agency] WARNING: zed-luxury-email.js not found, using plain-text fallback:', e.message);
+  generateLeadNotificationEmail = (d) => `<p>New Lead: ${d.name || 'Unknown'} from ${d.company || 'Unknown'}</p>`;
+  generateDueDateNotificationEmail = (d) => `<p>Due Date Alert: ${d.title || 'Task'} is due ${d.dueDate || 'soon'}</p>`;
+}
 
 const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID || process.env.AUTH_GOOGLE_CLIENT_ID || '';
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || process.env.AUTH_GOOGLE_CLIENT_SECRET || '';
