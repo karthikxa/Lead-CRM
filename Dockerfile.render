@@ -41,8 +41,9 @@ EXPOSE 3000
 # ENTRYPOINT strategy:
 # 1. Run patch-branding.sh sequentially — patch files and start proxy daemon on PUBLIC port
 # 2. Exec NestJS on internal port 3001 as foreground PID 1
-#    --max-old-space-size=320  → leave ~192MB for OS + Redis + proxy (512 total)
-#    --optimize-for-size       → V8 picks smaller code size over speed, saves ~20-40MB
-#    --expose-gc               → allow manual GC triggers in code
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --max-old-space-size=320 --optimize-for-size --expose-gc dist/main"]
+#    --jitless              → disables V8 JIT compiler, saves 60-100MB RAM (critical for 512MB tier)
+#    --max-old-space-size=380 → NestJS heap limit (JIT is gone so 380MB is now achievable)
+#    --optimize-for-size    → V8 picks smaller bytecode paths
+#    --expose-gc            → allow manual GC triggers
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --jitless --max-old-space-size=380 --optimize-for-size --expose-gc dist/main"]
 
