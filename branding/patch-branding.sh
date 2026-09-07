@@ -34,8 +34,8 @@ else
     fi
 fi
 
-# Remove dist/front to completely prevent ServeStaticModule from loading & save disk/RAM
-if [ -d "/app/packages/twenty-server/dist/front" ]; then
+# Remove dist/front only when explicitly disabled (cloud Vercel mode) — keep for local dev where frontend is served by same server
+if [ "$DISABLE_FRONTEND" = "true" ] && [ -d "/app/packages/twenty-server/dist/front" ]; then
     rm -rf /app/packages/twenty-server/dist/front
     echo "[Zed] Removed dist/front to disable ServeStaticModule and save RAM (Frontend is served by Vercel Edge CDN)"
 fi
@@ -474,102 +474,75 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    authContent = authContent.replace(/async signInUpWithSocialSSO\([\s\S]*?async createSSOConnectedAccountIfFeatureFlagIsOn/, `async signInUpWithSocialSSO({ firstName, lastName, email: userEmail, picture, billingCheckoutSessionState, authProvider }) {
+    const ssoRegex = /(?:async\s+)?signInUpWithSocialSso\s*\([\s\S]*?(?:async\s+)?createSsoConnectedAccountIfFeatureFlagIsOn\s*\(/i;
+    if (authContent.match(ssoRegex)) {
+        authContent = authContent.replace(ssoRegex, `async signInUpWithSocialSso({ firstName, lastName, email: rawEmail, picture, workspaceInviteHash, workspaceId, billingCheckoutSessionState, locale, returnToPath }, authProvider) {
         const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
+        const userEmail = (rawEmail || '').toLowerCase().trim();
+        console.log('[Zed-Auth] Social SSO login initiated for:', userEmail, 'provider:', authProvider);
+
         let existingUser = await this.userRepository.findOne({
-            where: { email: userEmail.toLowerCase() },
-            relations: { userWorkspaces: { workspace: true } }
+            where: { email: userEmail }
         });
 
         if (!existingUser) {
             existingUser = await this.userRepository.save({
-                email: userEmail.toLowerCase(),
+                email: userEmail,
                 firstName: firstName || 'Zed',
                 lastName: lastName || 'User',
-                isEmailVerified: true,
-                colorScheme: 'Dark'
+                isEmailVerified: true
             });
+            console.log('[Zed-Auth] Auto-created new user:', existingUser.id, userEmail);
         } else if (!existingUser.isEmailVerified) {
             existingUser.isEmailVerified = true;
             await this.userRepository.save(existingUser);
         }
 
         let defaultWorkspace = await this.workspaceRepository.findOne({
-            where: { activationStatus: _workspacestatusenum.WorkspaceActivationStatus.ACTIVE },
             order: { createdAt: 'ASC' }
         });
 
         if (defaultWorkspace) {
-            let userWorkspace = await this.userWorkspaceRepository.findOne({
-                where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
-            });
-
-            if (!userWorkspace) {
-                userWorkspace = await this.userWorkspaceRepository.save({
-                    userId: existingUser.id,
-                    workspaceId: defaultWorkspace.id,
-                    workspaceMemberId: require('crypto').randomUUID()
-                });
-            }
-
             try {
-                let member = await this.workspaceMemberRepository?.findOne?.({
-                    where: { userId: existingUser.id, workspaceId: defaultWorkspace.id }
-                });
-                if (!member && this.workspaceMemberRepository) {
-                    await this.workspaceMemberRepository.save({
-                        id: userWorkspace.workspaceMemberId,
-                        userId: existingUser.id,
-                        workspaceId: defaultWorkspace.id,
-                        name: { firstName: firstName || 'Zed', lastName: lastName || 'User' },
-                        userEmail: existingUser.email,
-                        colorScheme: 'Dark',
-                        locale: 'en'
-                    });
+                if (this.userWorkspaceService && typeof this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace === 'function') {
+                    await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(existingUser, defaultWorkspace);
+                    console.log('[Zed-Auth] Workspace membership ensured for:', userEmail);
                 }
-
-                if (this.roleTargetRepository && this.roleRepository) {
-                    const isAdmin = adminEmails.includes(existingUser.email.toLowerCase()) || existingUser.email.toLowerCase().endsWith('@zed.agency');
-                    const targetRoleName = isAdmin ? 'Admin' : 'Member';
-                    const role = await this.roleRepository.findOne({
-                        where: { workspaceId: defaultWorkspace.id, label: targetRoleName }
-                    }) || await this.roleRepository.findOne({
-                        where: { workspaceId: defaultWorkspace.id }
-                    });
-
-                    if (role) {
-                        const existingRoleTarget = await this.roleTargetRepository.findOne({
-                            where: { userWorkspaceId: userWorkspace.id, workspaceId: defaultWorkspace.id }
-                        });
-                        if (!existingRoleTarget) {
-                            const app = await this.applicationRepository?.findOneBy?.({}) || null;
-                            await this.roleTargetRepository.save({
-                                workspaceId: defaultWorkspace.id,
-                                roleId: role.id,
-                                userWorkspaceId: userWorkspace.id,
-                                applicationId: app ? app.id : '41d1b956-28c2-4d14-9188-b7d401aacef5',
-                                universalIdentifier: require('crypto').randomUUID()
-                            });
-                        }
-                    }
-                }
-            } catch (roleErr) {
-                console.log('[Zed] Role target auto-assignment notice:', roleErr.message);
+            } catch (err) {
+                console.log('[Zed-Auth] addUserToWorkspace notice:', err.message);
             }
         }
 
-        const loginToken = await this.loginTokenService.generateLoginToken(existingUser.email, defaultWorkspace ? defaultWorkspace.id : undefined, authProvider);
-        return this.computeRedirectURI({
-            loginToken: loginToken.token,
-            workspace: defaultWorkspace,
-            billingCheckoutSessionState,
-            returnToPath: '/objects/people'
-        });
-    }
-    async createSSOConnectedAccountIfFeatureFlagIsOn`);
+        const loginToken = await this.loginTokenService.generateLoginToken(
+            existingUser.email,
+            defaultWorkspace ? defaultWorkspace.id : undefined,
+            authProvider
+        );
+        console.log('[Zed-Auth] Generated loginToken for:', userEmail);
 
-    fs.writeFileSync(authServiceFile, authContent, 'utf8');
-    console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSSO!');
+        let redirectUrl;
+        try {
+            redirectUrl = this.computeRedirectURI({
+                loginToken: loginToken.token,
+                workspace: defaultWorkspace,
+                billingCheckoutSessionState,
+                returnToPath: returnToPath || '/objects/people'
+            });
+        } catch (redirErr) {
+            console.log('[Zed-Auth] computeRedirectURI fallback:', redirErr.message);
+            const frontUrl = process.env.FRONT_BASE_URL || process.env.FRONTEND_URL || 'https://zed-agency-crm.vercel.app';
+            redirectUrl = frontUrl.replace(/\\/$/, '') + '/auth/verify?loginToken=' + encodeURIComponent(loginToken.token) + '&returnToPath=' + encodeURIComponent(returnToPath || '/objects/people');
+        }
+
+        return redirectUrl;
+    }
+    async createSsoConnectedAccountIfFeatureFlagIsOn(`);
+
+        fs.writeFileSync(authServiceFile, authContent, 'utf8');
+        console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSso!');
+    } else {
+        console.warn('[Zed WARN] Could not find signInUpWithSocialSso in auth.service.js to patch!');
+    }
 }
 
 // 6b. Ensure currentUser resolver never throws on workspace lookup
@@ -913,8 +886,9 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
 `;
     mainContent = earlyBindHeader + mainContent;
 
-    // 2) Listen on internal port (3001) for the reverse proxy - universal regex
-    const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
+    // 2) Listen on internal port — only for cloud 512MB mode (DISABLE_FRONTEND=true), otherwise keep original NODE_PORT for local
+    if (process.env.DISABLE_FRONTEND === 'true') {
+        const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
         await app.listen(_nestPort, '0.0.0.0');
         console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
         if (typeof global.gc === 'function') {
@@ -922,11 +896,14 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
             const _m = process.memoryUsage();
             console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
         }`;
-    if (/await app\.listen\([\s\S]*?\);\n?/.test(mainContent)) {
-        mainContent = mainContent.replace(/await app\.listen\([\s\S]*?\);\n?/, newListen + '\n');
-        console.log('[Zed] Successfully patched app.listen to internal port 3001!');
+        if (/await app\.listen\([\s\S]*?\);\n?/.test(mainContent)) {
+            mainContent = mainContent.replace(/await app\.listen\([\s\S]*?\);\n?/, newListen + '\n');
+            console.log('[Zed] Successfully patched app.listen to internal port 3001!');
+        } else {
+            console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
+        }
     } else {
-        console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
+        console.log('[Zed] Keeping original app.listen on NODE_PORT for local dev');
     }
     mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
