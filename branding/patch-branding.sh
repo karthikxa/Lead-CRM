@@ -474,7 +474,7 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    const ssoRegex = /(?:async\s+)?signInUpWithSocialSso\s*\([\s\S]*?(?:async\s+)?createSsoConnectedAccountIfFeatureFlagIsOn\s*\(/i;
+    const ssoRegex = /async\s+signInUpWithSocialSso\s*\([\s\S]*?\n\s*async\s+createSsoConnectedAccountIfFeatureFlagIsOn\s*\(/;
     if (authContent.match(ssoRegex)) {
         authContent = authContent.replace(ssoRegex, `async signInUpWithSocialSso({ firstName, lastName, email: rawEmail, picture, workspaceInviteHash, workspaceId, billingCheckoutSessionState, locale, returnToPath }, authProvider) {
         const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
