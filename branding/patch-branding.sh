@@ -865,17 +865,20 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
     mainContent = earlyBindHeader + mainContent;
 
     // 2) Listen on internal port (3001) for the reverse proxy - universal regex
-    mainContent = mainContent.replace(
-        /await app\.listen\([^)]*\);/,
-        `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
+    const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
         await app.listen(_nestPort, '0.0.0.0');
         console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
         if (typeof global.gc === 'function') {
             try { global.gc(); } catch(e) {}
             const _m = process.memoryUsage();
             console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
-        }`
-    );
+        }`;
+    if (/await app\.listen\([\s\S]*?\);\n?/.test(mainContent)) {
+        mainContent = mainContent.replace(/await app\.listen\([\s\S]*?\);\n?/, newListen + '\n');
+        console.log('[Zed] Successfully patched app.listen to internal port 3001!');
+    } else {
+        console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
+    }
     mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
@@ -1066,6 +1069,38 @@ const proxy = http.createServer((clientReq, clientRes) => {
       'X-Zed-Status': nestReady ? 'ready' : 'starting'
     });
     clientRes.end(nestReady ? 'Zed CRM is ready' : 'Zed CRM is starting...');
+    return;
+  }
+
+  if (clientReq.url === '/_zed_diag') {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    let diag = {
+      nestReady,
+      activeNestPort,
+      uptime: elapsed(),
+      nodeMemory: process.memoryUsage(),
+      env: {
+        PORT: process.env.PORT,
+        NODE_PORT: process.env.NODE_PORT,
+        NODE_OPTIONS: process.env.NODE_OPTIONS,
+        ZED_PUBLIC_PORT: process.env.ZED_PUBLIC_PORT,
+        ZED_INTERNAL_PORT: process.env.ZED_INTERNAL_PORT
+      }
+    };
+    try { diag.ps = execSync('ps aux || ps -ef || ps', { encoding: 'utf8' }).trim().split('\n'); } catch (e) { diag.psErr = e.message; }
+    try { diag.netstat = execSync('netstat -tlpn 2>/dev/null || ss -tlpn 2>/dev/null || true', { encoding: 'utf8' }).trim().split('\n'); } catch (e) {}
+    try {
+      const mainPath = '/app/packages/twenty-server/dist/main.js';
+      if (fs.existsSync(mainPath)) {
+        const mc = fs.readFileSync(mainPath, 'utf8');
+        diag.mainLength = mc.length;
+        diag.hasInternalPort = mc.includes('ZED_INTERNAL_PORT');
+        diag.mainTail = mc.slice(-600);
+      }
+    } catch(e) { diag.mainErr = e.message; }
+    clientRes.writeHead(200, { 'Content-Type': 'application/json' });
+    clientRes.end(JSON.stringify(diag, null, 2));
     return;
   }
 
