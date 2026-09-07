@@ -1099,6 +1099,14 @@ rm -f /tmp/repair-db.js
 cat > /tmp/zed-proxy.js << 'PROXYEOF'
 const http = require('http');
 const net = require('net');
+const fs = require('fs');
+
+process.on('uncaughtException', (err) => {
+  console.error('[Zed-Proxy UNCAUGHT]', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Zed-Proxy REJECTION]', reason);
+});
 
 const PUBLIC_PORT = Number(process.env.ZED_PUBLIC_PORT || process.env.PORT || 10000);
 const PRIMARY_NEST_PORT = Number(process.env.ZED_INTERNAL_PORT || 3001);
