@@ -43,8 +43,8 @@ EXPOSE 3000
 # 1. Run patch-branding.sh sequentially — patch files and start proxy daemon on PUBLIC port
 # 2. Exec NestJS on internal port 3001 as foreground PID 1
 #    --jitless              → disables V8 JIT compiler, saves 60-100MB RAM (critical for 512MB tier)
-#    --max-old-space-size=440 → NestJS heap limit (with --jitless and boot-GC, fits well inside 512MB)
+#    --max-old-space-size=512 → NestJS heap limit (avoids premature Mark-Compact aborts near 385MB)
 #    --optimize-for-size    → V8 picks smaller bytecode paths
 #    --expose-gc            → allow manual GC triggers
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --jitless --max-old-space-size=440 --optimize-for-size --expose-gc dist/main"]
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --jitless --max-old-space-size=512 --optimize-for-size --expose-gc dist/main"]
 

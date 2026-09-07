@@ -908,12 +908,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
     console.error('[Zed ERROR] Uncaught Exception:', err && (err.stack || err.message || err));
 });
-const _bootGc = setInterval(() => {
-    if (typeof global.gc === 'function') {
-        try { global.gc(); } catch(e) {}
-    }
-}, 3000);
-console.log('[Zed] NestJS runtime bootstrap starting (boot-GC active)...');
+console.log('[Zed] NestJS runtime bootstrap starting...');
 // [Zed] END_ACTIVE_BOOT
 `;
     mainContent = earlyBindHeader + mainContent;
@@ -922,7 +917,6 @@ console.log('[Zed] NestJS runtime bootstrap starting (boot-GC active)...');
     const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
         await app.listen(_nestPort, '0.0.0.0');
         console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
-        if (typeof _bootGc !== 'undefined') clearInterval(_bootGc);
         if (typeof global.gc === 'function') {
             try { global.gc(); } catch(e) {}
             const _m = process.memoryUsage();
@@ -934,7 +928,7 @@ console.log('[Zed] NestJS runtime bootstrap starting (boot-GC active)...');
     } else {
         console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
     }
-    mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => { if (typeof _bootGc !== "undefined") clearInterval(_bootGc); console.log("[Zed] Bootstrap completed successfully."); }).catch(err => { if (typeof _bootGc !== "undefined") clearInterval(_bootGc); console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
+    mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
 
@@ -1024,11 +1018,16 @@ console.log('[Zed] TypeORM pool size reduced to 2!');
 const modulesModuleFile = path.join(SERVER_DIR, 'modules/modules.module.js');
 if (fs.existsSync(modulesModuleFile)) {
     let mmContent = fs.readFileSync(modulesModuleFile, 'utf8');
+    // 1) Neutralize requires so the massive module files are never evaluated
+    mmContent = mmContent.replace(/require\(['"]\.\/messaging\/messaging\.module['"]\)/g, '{}');
+    mmContent = mmContent.replace(/require\(['"]\.\/calendar\/calendar\.module['"]\)/g, '{}');
+    mmContent = mmContent.replace(/require\(['"]\.\/onboarding-invite-suggestions\/onboarding-invite-suggestions\.module['"]\)/g, '{}');
+    // 2) Remove from imports array
     mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?MessagingModule\s*,?/g, '');
     mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?CalendarModule\s*,?/g, '');
     mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?OnboardingInviteSuggestionsModule\s*,?/g, '');
     fs.writeFileSync(modulesModuleFile, mmContent, 'utf8');
-    console.log('[Zed] Patched modules.module.js: removed MessagingModule & CalendarModule (saves ~100MB heap)!');
+    console.log('[Zed] Patched modules.module.js: stripped Messaging & Calendar modules completely (saves ~100MB heap)!');
 }
 
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
