@@ -908,7 +908,12 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
     console.error('[Zed ERROR] Uncaught Exception:', err && (err.stack || err.message || err));
 });
-console.log('[Zed] NestJS runtime bootstrap starting...');
+const _bootGc = setInterval(() => {
+    if (typeof global.gc === 'function') {
+        try { global.gc(); } catch(e) {}
+    }
+}, 3000);
+console.log('[Zed] NestJS runtime bootstrap starting (boot-GC active)...');
 // [Zed] END_ACTIVE_BOOT
 `;
     mainContent = earlyBindHeader + mainContent;
@@ -917,6 +922,7 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
     const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
         await app.listen(_nestPort, '0.0.0.0');
         console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
+        if (typeof _bootGc !== 'undefined') clearInterval(_bootGc);
         if (typeof global.gc === 'function') {
             try { global.gc(); } catch(e) {}
             const _m = process.memoryUsage();
@@ -928,7 +934,7 @@ console.log('[Zed] NestJS runtime bootstrap starting...');
     } else {
         console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
     }
-    mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
+    mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => { if (typeof _bootGc !== "undefined") clearInterval(_bootGc); console.log("[Zed] Bootstrap completed successfully."); }).catch(err => { if (typeof _bootGc !== "undefined") clearInterval(_bootGc); console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 }
 
@@ -1011,99 +1017,6 @@ for (const dsFile of dataSourceFiles) {
     }
 }
 console.log('[Zed] TypeORM pool size reduced to 2!');
-
-// [Zed] AGGRESSIVE MODULE STUBBING - Find actual files regardless of path
-// Use readdirSync recursively to find module files wherever they are
-function findFiles(dir, filename) {
-    const results = [];
-    if (!fs.existsSync(dir)) return results;
-    try {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        for (const e of entries) {
-            const full = path.join(dir, e.name);
-            if (e.isDirectory()) {
-                results.push(...findFiles(full, filename));
-            } else if (e.name === filename) {
-                results.push(full);
-            }
-        }
-    } catch (e) {}
-    return results;
-}
-
-function findFilesMatching(dir, pattern) {
-    const results = [];
-    if (!fs.existsSync(dir)) return results;
-    try {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        for (const e of entries) {
-            const full = path.join(dir, e.name);
-            if (e.isDirectory()) {
-                results.push(...findFilesMatching(full, pattern));
-            } else if (pattern.test(e.name)) {
-                results.push(full);
-            }
-        }
-    } catch (e) {}
-    return results;
-}
-
-// ============================================================
-// MEMORY CRITICAL: Strip heavy optional modules from app.module.js
-// These modules load massive Google API SDKs + BullMQ workers
-// that consume 80-120MB of heap. Our workflow worker handles
-// emails/calendar externally so these are safe to remove.
-// ============================================================
-const appModulePath = path.join(SERVER_DIR, 'app.module.js');
-if (fs.existsSync(appModulePath)) {
-    let mod = fs.readFileSync(appModulePath, 'utf8');
-    let stripped = 0;
-
-    // Helper: replace a module reference with a no-op stub
-    function stubModule(pattern, name) {
-        const before = mod.length;
-        mod = mod.replace(pattern, `{ module: class Disabled${name}Module {} }`);
-        if (mod.length !== before) stripped++;
-    }
-
-    // Strip MessagingModule (loads Google People API + huge Gmail crawling SDK)
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?MessagingModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Messaging');
-    // Strip CalendarModule (loads Google Calendar API SDK)
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?CalendarModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Calendar');
-    // Strip BillingModule (Stripe SDK)
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?BillingModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Billing');
-    // Strip AnalyticsModule / TelemetryModule
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?AnalyticsModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Analytics');
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?TelemetryModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Telemetry');
-    // Strip AIModule (OpenAI/embedding SDKs)
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?AiModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Ai');
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?LlmModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Llm');
-    // Strip SentryModule (already done above but belt-and-suspenders)
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?SentryModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Sentry');
-    // Strip ServerlessFunctionModule
-    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?ServerlessFunctionModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'ServerlessFunction');
-
-    fs.writeFileSync(appModulePath, mod, 'utf8');
-    console.log('[Zed] app.module.js: stripped ' + stripped + ' heavy optional modules (saves ~100MB heap)!');
-}
-
-// Also strip any heavy Bull/BullMQ queue workers that load job processors
-const workerFiles = [
-    'engine/core-modules/messaging/jobs',
-    'engine/core-modules/calendar/jobs',
-    'engine/core-modules/billing/jobs',
-].map(p => path.join(SERVER_DIR, p));
-workerFiles.forEach(dir => {
-    try {
-        if (fs.existsSync(dir)) {
-            // Overwrite all .js files in the jobs dir with empty exports to prevent loading
-            fs.readdirSync(dir).filter(f => f.endsWith('.js')).forEach(f => {
-                fs.writeFileSync(path.join(dir, f), '"use strict";\nObject.defineProperty(exports, "__esModule", { value: true });\n', 'utf8');
-            });
-            console.log('[Zed] Neutralized job workers in ' + dir.split('/').slice(-3).join('/'));
-        }
-    } catch(e) {}
-});
 
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 EOF
