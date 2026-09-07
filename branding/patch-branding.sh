@@ -474,12 +474,12 @@ const authServiceFile = path.join(SERVER_DIR, 'engine/core-modules/auth/services
 if (fs.existsSync(authServiceFile)) {
     let authContent = fs.readFileSync(authServiceFile, 'utf8');
     
-    const ssoRegex = /async\s+signInUpWithSocialSSO\s*\([\s\S]*?\n\s*async\s+createSSOConnectedAccountIfFeatureFlagIsOn\s*\(/;
+    const ssoRegex = /(async\s+signInUpWithSocial(?:SSO|Sso)\s*\()/i;
     if (authContent.match(ssoRegex)) {
         authContent = authContent.replace(ssoRegex, `async signInUpWithSocialSSO({ firstName, lastName, email: rawEmail, picture, workspaceInviteHash, workspaceId, billingCheckoutSessionState, locale, returnToPath }, authProvider) {
         const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
         const userEmail = (rawEmail || '').toLowerCase().trim();
-        console.log('[Zed-Auth] Social SSO login initiated for:', userEmail, 'provider:', authProvider);
+        console.log('[Zed-Auth] Direct Social SSO login initiated for:', userEmail, 'provider:', authProvider);
 
         let existingUser = await this.userRepository.findOne({
             where: { email: userEmail }
@@ -536,12 +536,15 @@ if (fs.existsSync(authServiceFile)) {
 
         return redirectUrl;
     }
-    async createSSOConnectedAccountIfFeatureFlagIsOn(`);
+    async signInUpWithSocialSso(args, provider) {
+        return this.signInUpWithSocialSSO(args, provider);
+    }
+    async __stock_signInUpWithSocialSSO(`);
 
         fs.writeFileSync(authServiceFile, authContent, 'utf8');
         console.log('[Zed] Direct 1-Click Google OAuth & Workspace Auto-Enrollment active in signInUpWithSocialSSO!');
     } else {
-        console.warn('[Zed WARN] Could not find signInUpWithSocialSSO in auth.service.js to patch!');
+        console.warn('[Zed WARN] Could not find signInUpWithSocial in auth.service.js to patch!');
     }
 }
 
