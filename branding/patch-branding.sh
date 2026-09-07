@@ -1224,19 +1224,16 @@ function checkPort(port) {
 }
 
 function startWorkflowWorker() {
-  if (fs.existsSync('/app/scripts/agency-workflow-worker.js')) {
-    console.log('[Zed-Proxy] Launching Agency Workflow Worker daemon (deferred after Nest boot)...');
+  const workerPath = '/app/scripts/agency-workflow-worker.js';
+  if (fs.existsSync(workerPath)) {
+    console.log('[Zed-Proxy] Running Agency Workflow Worker in-process (zero child-process overhead)...');
     try {
-      const cp = require('child_process');
-      const child = cp.spawn('node', ['--max-old-space-size=48', '/app/scripts/agency-workflow-worker.js'], {
-        env: { ...process.env, NODE_PATH: '/app/packages/twenty-server/node_modules:/app/node_modules' },
-        detached: false,
-        stdio: 'inherit'
-      });
-      child.on('error', (err) => console.error('[Zed-Proxy] Worker spawn error:', err.message));
-      child.on('exit', (code) => console.log('[Zed-Proxy] Worker exited with code:', code));
+      const worker = require(workerPath);
+      if (typeof worker.main === 'function') {
+        worker.main().catch(err => console.error('[Zed-Proxy Worker ERR]', err.message));
+      }
     } catch (e) {
-      console.error('[Zed-Proxy] Failed to start worker:', e.message);
+      console.error('[Zed-Proxy] Failed to run worker in-process:', e.message);
     }
   }
 }
@@ -1268,7 +1265,7 @@ process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
 PROXYEOF
 
 echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} → INTERNAL:3001)"
-ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=32 /tmp/zed-proxy.js &
+NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=48 /tmp/zed-proxy.js &
 sleep 0.5
 echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."
 

@@ -16,7 +16,7 @@ const SMTP_PORT = parseInt(process.env.EMAIL_SMTP_PORT||'465',10);
 const SMTP_USER = process.env.EMAIL_SMTP_USER || 'zedagencyofficial@gmail.com';
 const SMTP_PASS = process.env.EMAIL_SMTP_PASSWORD || '';
 const EMAIL_TO = 'zedagencyofficial@gmail.com';
-const POLL_MS = parseInt(process.env.AGENCY_POLL_MS||'3000',10);
+const POLL_MS = parseInt(process.env.AGENCY_POLL_MS || '15000', 10);
 
 const https = require('https');
 const crypto = require('crypto');
@@ -456,5 +456,6 @@ async function main() {
   setInterval(pollOnce, POLL_MS);
 }
 
+module.exports = { main, pollOnce };
 if (require.main === module) main();
 
