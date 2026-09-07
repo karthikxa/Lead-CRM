@@ -1048,6 +1048,63 @@ function findFilesMatching(dir, pattern) {
     return results;
 }
 
+// ============================================================
+// MEMORY CRITICAL: Strip heavy optional modules from app.module.js
+// These modules load massive Google API SDKs + BullMQ workers
+// that consume 80-120MB of heap. Our workflow worker handles
+// emails/calendar externally so these are safe to remove.
+// ============================================================
+const appModulePath = path.join(SERVER_DIR, 'app.module.js');
+if (fs.existsSync(appModulePath)) {
+    let mod = fs.readFileSync(appModulePath, 'utf8');
+    let stripped = 0;
+
+    // Helper: replace a module reference with a no-op stub
+    function stubModule(pattern, name) {
+        const before = mod.length;
+        mod = mod.replace(pattern, `{ module: class Disabled${name}Module {} }`);
+        if (mod.length !== before) stripped++;
+    }
+
+    // Strip MessagingModule (loads Google People API + huge Gmail crawling SDK)
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?MessagingModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Messaging');
+    // Strip CalendarModule (loads Google Calendar API SDK)
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?CalendarModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Calendar');
+    // Strip BillingModule (Stripe SDK)
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?BillingModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Billing');
+    // Strip AnalyticsModule / TelemetryModule
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?AnalyticsModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Analytics');
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?TelemetryModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Telemetry');
+    // Strip AIModule (OpenAI/embedding SDKs)
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?AiModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Ai');
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?LlmModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Llm');
+    // Strip SentryModule (already done above but belt-and-suspenders)
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?SentryModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'Sentry');
+    // Strip ServerlessFunctionModule
+    stubModule(/(?:[a-zA-Z_$][\w$]*\.)?ServerlessFunctionModule(?:\.forRoot\([^)]*\)|\.register\([^)]*\))?/g, 'ServerlessFunction');
+
+    fs.writeFileSync(appModulePath, mod, 'utf8');
+    console.log('[Zed] app.module.js: stripped ' + stripped + ' heavy optional modules (saves ~100MB heap)!');
+}
+
+// Also strip any heavy Bull/BullMQ queue workers that load job processors
+const workerFiles = [
+    'engine/core-modules/messaging/jobs',
+    'engine/core-modules/calendar/jobs',
+    'engine/core-modules/billing/jobs',
+].map(p => path.join(SERVER_DIR, p));
+workerFiles.forEach(dir => {
+    try {
+        if (fs.existsSync(dir)) {
+            // Overwrite all .js files in the jobs dir with empty exports to prevent loading
+            fs.readdirSync(dir).filter(f => f.endsWith('.js')).forEach(f => {
+                fs.writeFileSync(path.join(dir, f), '"use strict";\nObject.defineProperty(exports, "__esModule", { value: true });\n', 'utf8');
+            });
+            console.log('[Zed] Neutralized job workers in ' + dir.split('/').slice(-3).join('/'));
+        }
+    } catch(e) {}
+});
+
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 EOF
 
