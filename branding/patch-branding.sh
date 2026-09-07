@@ -891,7 +891,7 @@ if (fs.existsSync(mainFile)) {
     mainContent = mainContent.replace(/\/\/ \[Zed\] Admin Lead Scraper API[\s\S]*?await app\.listen\(twentyConfigService\.get\('NODE_PORT'\)[^;]*\);\n?(\s*console\.log\('\[Zed\] NestJS fully listening[^']*'\);\n?)?/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
     mainContent = mainContent.replace(/await app\.listen\(_earlyPort, '0\.0\.0\.0'\);/g, 'await app.listen(twentyConfigService.get(\'NODE_PORT\'));');
 
-    // 1) Inject clean boot logging, memory watchdog, and global error traps at the very top of main.js
+    // 1) Inject clean boot logging and global error traps at the very top of main.js
     const earlyBindHeader = `// [Zed] ACTIVE_BOOT
 const dns = require('dns');
 if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
@@ -901,38 +901,33 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
     console.error('[Zed ERROR] Uncaught Exception:', err && (err.stack || err.message || err));
 });
-// Zed Memory Watchdog for 512MB RAM tier
-setInterval(() => {
-  if (typeof global.gc === 'function') {
-    const mem = process.memoryUsage();
-    if (mem.rss > 410 * 1024 * 1024 || mem.heapUsed > 320 * 1024 * 1024) {
-      try { global.gc(); } catch (e) {}
-    }
-  }
-}, 5000);
 console.log('[Zed] NestJS runtime bootstrap starting...');
 // [Zed] END_ACTIVE_BOOT
 `;
     mainContent = earlyBindHeader + mainContent;
 
-    // 2) Listen on internal port — only for cloud 512MB mode (DISABLE_FRONTEND=true), otherwise keep original NODE_PORT for local
-    if (process.env.DISABLE_FRONTEND === 'true') {
-        const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || 3001);
-        await app.listen(_nestPort, '0.0.0.0');
-        console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
+    // 2) Listen on internal port (or NODE_PORT) + Post-boot GC and running memory watchdog
+    const newListen = `const _nestPort = Number(process.env.ZED_INTERNAL_PORT || process.env.NODE_PORT || 3001);
+    await app.listen(_nestPort, '0.0.0.0');
+    console.log('[Zed] NestJS fully listening on internal port ' + _nestPort);
+    if (typeof global.gc === 'function') {
+        try { global.gc(); } catch(e) {}
+        const _m = process.memoryUsage();
+        console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
+    }
+    setInterval(() => {
         if (typeof global.gc === 'function') {
-            try { global.gc(); } catch(e) {}
             const _m = process.memoryUsage();
-            console.log('[Zed Ready] Post-boot Heap: ' + (_m.heapUsed/1024/1024).toFixed(1) + 'MB / ' + (_m.heapTotal/1024/1024).toFixed(1) + 'MB, RSS: ' + (_m.rss/1024/1024).toFixed(1) + 'MB');
-        }`;
-        if (/await app\.listen\([\s\S]*?\);\n?/.test(mainContent)) {
-            mainContent = mainContent.replace(/await app\.listen\([\s\S]*?\);\n?/, newListen + '\n');
-            console.log('[Zed] Successfully patched app.listen to internal port 3001!');
-        } else {
-            console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
+            if (_m.rss > 440 * 1024 * 1024 || _m.heapUsed > 350 * 1024 * 1024) {
+                try { global.gc(); } catch(e) {}
+            }
         }
+    }, 10000);`;
+    if (/await app\.listen\([\s\S]*?\);\n?/.test(mainContent)) {
+        mainContent = mainContent.replace(/await app\.listen\([\s\S]*?\);\n?/, newListen + '\n');
+        console.log('[Zed] Successfully patched app.listen to internal port with post-boot GC!');
     } else {
-        console.log('[Zed] Keeping original app.listen on NODE_PORT for local dev');
+        console.warn('[Zed WARNING] Could not find await app.listen in main.js!');
     }
     mainContent = mainContent.replace(/(?:void\s+)?bootstrap\(\);?/, 'bootstrap().then(() => console.log("[Zed] Bootstrap completed successfully.")).catch(err => { console.error("[Zed FATAL] Bootstrap error:", err); process.exit(1); });');
     fs.writeFileSync(mainFile, mainContent, 'utf8');
