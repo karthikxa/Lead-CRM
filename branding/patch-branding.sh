@@ -1018,6 +1018,19 @@ for (const dsFile of dataSourceFiles) {
 }
 console.log('[Zed] TypeORM pool size reduced to 2!');
 
+// 18. CRITICAL MEMORY OPTIMIZATION: Strip heavy background crawling modules from modules.module.js
+// ModulesModule has providers:[], exports:[] — removing MessagingModule, CalendarModule,
+// and OnboardingInviteSuggestionsModule eliminates Gmail/GCal crawler SDKs, saving ~80-120MB heap!
+const modulesModuleFile = path.join(SERVER_DIR, 'modules/modules.module.js');
+if (fs.existsSync(modulesModuleFile)) {
+    let mmContent = fs.readFileSync(modulesModuleFile, 'utf8');
+    mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?MessagingModule\s*,?/g, '');
+    mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?CalendarModule\s*,?/g, '');
+    mmContent = mmContent.replace(/(?:[a-zA-Z0-9_$]+\.)?OnboardingInviteSuggestionsModule\s*,?/g, '');
+    fs.writeFileSync(modulesModuleFile, mmContent, 'utf8');
+    console.log('[Zed] Patched modules.module.js: removed MessagingModule & CalendarModule (saves ~100MB heap)!');
+}
+
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 EOF
 
