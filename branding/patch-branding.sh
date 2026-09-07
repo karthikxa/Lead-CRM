@@ -153,91 +153,140 @@ if (fs.existsSync(wsInviteFile)) {
         `'"Zed Agency" <zedagencyofficial@gmail.com>'`
     );
     
-    // Inject corporate responsive HTML template
-    if (!wiContent.includes('Zed Agency Enterprise CRM')) {
+    // Inject Luxury Editorial "Welcome to Zed" HTML template (Z logo orb, zero spam)
+    if (!wiContent.includes('Welcome to zed')) {
         wiContent = wiContent.replace(
             /const html = await \(0, _twentyemails\.renderEmail\)\(emailTemplate\);/,
-            `const inviterName = [sender.name?.firstName, sender.name?.lastName].filter(Boolean).join(' ') || sender.userEmail || 'Team Admin';
+            `const inviterName = [sender.name?.firstName, sender.name?.lastName].filter(Boolean).join(' ') || sender.userEmail?.split('@')[0] || 'Karthik';
             const workspaceTitle = workspace.displayName || 'Zed Agency Workspace';
             const inviteUrl = link.toString();
+            const roleDisplay = 'Administrator';
             const html = \`<!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workspace Invitation</title>
+  <title>Welcome to Zed</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,600&display=swap');
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #172b4d;">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f5f7; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: #faf9f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #111827;">
+  <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; max-width: 0px; opacity: 0;">
+    You've been invited to join \${workspaceTitle} on Zed CRM. Your seat is ready.
+  </div>
+
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #faf9f6; padding: 44px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(9, 30, 66, 0.08); border: 1px solid #e1e4e8;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; background-color: #ffffff; border-radius: 28px; overflow: hidden; border: 1px solid #edece6; box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.04);">
           <tr>
-            <td style="padding: 32px 40px 24px 40px; background: #0f172a; text-align: left;">
-              <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <div style="display: inline-block; background: #2563eb; width: 36px; height: 36px; border-radius: 8px; text-align: center; line-height: 36px; color: #ffffff; font-weight: 800; font-size: 20px; vertical-align: middle;">Z</div>
-                    <span style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; margin-left: 12px; vertical-align: middle;">Zed Agency</span>
-                  </td>
-                  <td align="right">
-                    <span style="background: rgba(255,255,255,0.12); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">Enterprise CRM</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 40px 40px 32px 40px;">
-              <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #0f172a; line-height: 1.3;">
-                You've been invited to join <strong>\${workspaceTitle}</strong>
-              </h1>
-              <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                Hello,
-              </p>
-              <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                <strong>\${inviterName}</strong> (\${sender.userEmail}) has invited you to collaborate as a team member on the <strong>\${workspaceTitle}</strong> enterprise workspace on Zed CRM.
-              </p>
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 28px;">
-                <tr>
-                  <td style="padding: 16px 20px;">
-                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Workspace Details</div>
-                    <div style="font-size: 15px; font-weight: 600; color: #0f172a;">\${workspaceTitle}</div>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 2px;">Access Level: <strong>Full Workspace Member</strong></div>
-                  </td>
-                </tr>
-              </table>
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
-                <tr>
-                  <td align="center">
-                    <a href="\${inviteUrl}" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); text-align: center;">
-                      Accept Invitation & Join Workspace &rarr;
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin: 0 0 12px 0; font-size: 13px; line-height: 1.5; color: #64748b;">
-                If the button above does not work, copy and paste this secure link into your browser:
-              </p>
-              <p style="margin: 0 0 28px 0; font-size: 12px; line-height: 1.5; color: #2563eb; word-break: break-all; background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-family: ui-monospace, monospace;">
-                \${inviteUrl}
-              </p>
-              <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 12px; line-height: 1.5; color: #64748b;">
-                <strong>Security Notice:</strong> This invitation link is unique to you and will expire in 7 days. If you were not expecting this invitation, you can safely disregard this email.
+            <td style="padding: 44px 38px 38px 38px;">
+              
+              <div style="text-align: center; margin-bottom: 24px;">
+                <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.6px; color: #111827;">zed</span>
               </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 24px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748b;">
-                Sent securely by <strong>Zed Agency Enterprise CRM</strong>
+
+              <div style="text-align: center; background: radial-gradient(ellipse at center, rgba(167, 243, 208, 0.45) 0%, rgba(209, 250, 229, 0.2) 50%, rgba(255, 255, 255, 0) 72%); padding: 12px 10px 24px 10px; border-radius: 24px;">
+                <div style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 400; font-size: 46px; line-height: 1; color: #111827; letter-spacing: -0.5px; margin-bottom: 2px;">Welcome</div>
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 800; font-size: 34px; line-height: 1.15; color: #111827; letter-spacing: -1.2px; margin-top: -2px; margin-bottom: 22px;">to zed</div>
+                
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center">
+                      <img src="https://zed-agency-crm.vercel.app/assets/email-orb.png" alt="Zed Emblem" width="220" height="220" style="display: block; width: 220px; height: 220px; border-radius: 50%; object-fit: cover; box-shadow: 0 14px 34px -4px rgba(16, 185, 129, 0.3), 0 4px 12px rgba(0, 0, 0, 0.06);" />
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 28px 0 12px 0;">
+                Hey, you're officially invited to join <strong>\${workspaceTitle}</strong>.
               </p>
-              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                &copy; 2026 Zed Agency Inc. All rights reserved. &bull; <a href="https://zed.agency" style="color: #64748b; text-decoration: underline;">zed.agency</a>
+
+              <p style="font-size: 14px; line-height: 1.6; color: #111827; margin: 0 0 16px 0;">
+                Your assigned role: <span style="font-family: ui-monospace, SFMono-Regular, monospace; background-color: #f3f4f6; border: 1px solid #e5e7eb; padding: 3px 10px; border-radius: 8px; font-weight: 700; color: #111827;">\${roleDisplay}</span>
               </p>
+
+              <p style="font-size: 14px; line-height: 1.6; color: #4b5563; margin: 0 0 26px 0;">
+                <strong>\${inviterName}</strong> has prepared your access credentials so our team can collaborate seamlessly with high-touch agency automation.
+              </p>
+
+              <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 18px;">
+                In the meantime...
+              </div>
+
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="vertical-align: top; width: 28px; padding-right: 12px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d1d5db; background-color: #ffffff; text-align: center; line-height: 24px; font-size: 11px; font-weight: 700; color: #374151;">1</div>
+                  </td>
+                  <td style="vertical-align: top;">
+                    <div style="font-size: 14px; line-height: 1.5; color: #374151;">
+                      <strong style="color: #111827;">Claim your seat.</strong> Direct link to activate your workspace profile:
+                    </div>
+                    <div style="margin-top: 8px;">
+                      <span style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 20px; padding: 6px 14px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: #111827; word-break: break-all; display: inline-block;">
+                        \${inviteUrl}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="vertical-align: top; width: 28px; padding-right: 12px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d1d5db; background-color: #ffffff; text-align: center; line-height: 24px; font-size: 11px; font-weight: 700; color: #374151;">2</div>
+                  </td>
+                  <td style="vertical-align: top;">
+                    <div style="font-size: 14px; line-height: 1.5; color: #374151;">
+                      <strong style="color: #111827;">Stay in sync.</strong> Automatic Google Calendar meetings, Gmail automation, and CRM pipelines are ready for you.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="vertical-align: top; width: 28px; padding-right: 12px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid #d1d5db; background-color: #ffffff; text-align: center; line-height: 24px; font-size: 11px; font-weight: 700; color: #374151;">3</div>
+                  </td>
+                  <td style="vertical-align: top;">
+                    <div style="font-size: 14px; line-height: 1.5; color: #374151;">
+                      <strong style="color: #111827;">Finish your profile.</strong> Click below to accept the invitation and enter your workspace immediately.
+                    </div>
+                    <div style="margin-top: 14px;">
+                      <a href="\${inviteUrl}" target="_blank" style="display: inline-block; background-color: #000000; color: #ffffff; font-size: 13px; font-weight: 600; text-decoration: none; padding: 12px 26px; border-radius: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center;">
+                        Accept Invitation &rarr;
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size: 14px; line-height: 1.5; color: #4b5563; margin: 28px 0 16px 0;">
+                We're excited to have you on board.
+              </p>
+              <p style="font-size: 14px; font-weight: 600; color: #111827; margin: 0 0 24px 0;">
+                &mdash; Zed Team
+              </p>
+
+              <div style="padding-top: 20px; border-top: 1px solid #f3f4f6; font-size: 13px; line-height: 1.6; color: #6b7280; font-style: italic;">
+                ps. If you respond to this email, a human will respond back... just saying.
+              </div>
+
             </td>
           </tr>
         </table>
+
+        <div style="text-align: center; margin-top: 24px;">
+          <a href="https://zed.agency" style="font-size: 12px; color: #9ca3af; text-decoration: none; letter-spacing: 0.2px;">www.zed.agency</a>
+        </div>
+
       </td>
     </tr>
   </table>
@@ -246,7 +295,7 @@ if (fs.existsSync(wsInviteFile)) {
         );
     }
     fs.writeFileSync(wsInviteFile, wiContent, 'utf8');
-    console.log('[Zed] Patched WorkspaceInvitationService with enterprise template!');
+    console.log('[Zed] Patched WorkspaceInvitationService with luxury editorial Welcome to Zed template!');
 }
 
 // 1e. Configure Clean Zed & OpenAI AI Providers in ai-providers.json
@@ -1166,6 +1215,24 @@ function checkPort(port) {
   });
 }
 
+function startWorkflowWorker() {
+  if (fs.existsSync('/app/scripts/agency-workflow-worker.js')) {
+    console.log('[Zed-Proxy] Launching Agency Workflow Worker daemon (deferred after Nest boot)...');
+    try {
+      const cp = require('child_process');
+      const child = cp.spawn('node', ['--max-old-space-size=48', '/app/scripts/agency-workflow-worker.js'], {
+        env: { ...process.env, NODE_PATH: '/app/packages/twenty-server/node_modules:/app/node_modules' },
+        detached: false,
+        stdio: 'inherit'
+      });
+      child.on('error', (err) => console.error('[Zed-Proxy] Worker spawn error:', err.message));
+      child.on('exit', (code) => console.log('[Zed-Proxy] Worker exited with code:', code));
+    } catch (e) {
+      console.error('[Zed-Proxy] Failed to start worker:', e.message);
+    }
+  }
+}
+
 const readyCheck = setInterval(async () => {
   if (nestReady) return;
   const on3001 = await checkPort(PRIMARY_NEST_PORT);
@@ -1174,6 +1241,7 @@ const readyCheck = setInterval(async () => {
     nestReady = true;
     clearInterval(readyCheck);
     console.log('[Zed-Proxy] NestJS detected on port ' + PRIMARY_NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic!');
+    setTimeout(startWorkflowWorker, 15000);
     return;
   }
   const on3000 = await checkPort(FALLBACK_NEST_PORT);
@@ -1182,6 +1250,7 @@ const readyCheck = setInterval(async () => {
     nestReady = true;
     clearInterval(readyCheck);
     console.log('[Zed-Proxy] NestJS detected on fallback port ' + FALLBACK_NEST_PORT + ' after ' + elapsed() + ' — now proxying all traffic!');
+    setTimeout(startWorkflowWorker, 15000);
     return;
   }
 }, 2000);
@@ -1195,8 +1264,4 @@ ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=
 sleep 0.5
 echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."
 
-if [ -f /app/scripts/agency-workflow-worker.js ]; then
-    echo "[Zed] Starting Agency Workflow Worker daemon..."
-    NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules node --max-old-space-size=48 /app/scripts/agency-workflow-worker.js &
-fi
 

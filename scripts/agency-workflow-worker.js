@@ -18,10 +18,118 @@ const SMTP_PASS = process.env.EMAIL_SMTP_PASSWORD || '';
 const EMAIL_TO = 'zedagencyofficial@gmail.com';
 const POLL_MS = parseInt(process.env.AGENCY_POLL_MS||'3000',10);
 
+const https = require('https');
+const crypto = require('crypto');
+const { generateLeadNotificationEmail, generateDueDateNotificationEmail } = require('./zed-luxury-email.js');
+
+const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID || process.env.AUTH_GOOGLE_CLIENT_ID || '';
+const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || process.env.AUTH_GOOGLE_CLIENT_SECRET || '';
+const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN || '';
+
+function getGmailAccessToken() {
+  return new Promise((resolve, reject) => {
+    const payload = 'client_id=' + encodeURIComponent(GMAIL_CLIENT_ID)
+      + '&client_secret=' + encodeURIComponent(GMAIL_CLIENT_SECRET)
+      + '&refresh_token=' + encodeURIComponent(GMAIL_REFRESH_TOKEN)
+      + '&grant_type=refresh_token';
+    const req = https.request({
+      hostname: 'oauth2.googleapis.com',
+      path: '/token',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d);
+          if (j.access_token) resolve(j.access_token);
+          else reject(new Error('Token refresh error: ' + d));
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+async function sendViaGmailApi({ to, subject, html, text }) {
+  const token = await getGmailAccessToken();
+  const boundary = '----=_Part_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+  const now = new Date().toUTCString();
+  const msgId = '<zed-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + '@gmail.com>';
+
+  const rawMessage = [
+    'From: "Zed" <zedagencyofficial@gmail.com>',
+    'To: ' + to,
+    'Reply-To: zedagencyofficial@gmail.com',
+    'Subject: =?UTF-8?B?' + Buffer.from(subject, 'utf8').toString('base64') + '?=',
+    'Date: ' + now,
+    'Message-ID: ' + msgId,
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/alternative; boundary="' + boundary + '"',
+    'X-Mailer: Zed Agency CRM Suite',
+    'X-Priority: 3',
+    'Importance: Normal',
+    'List-Unsubscribe: <mailto:zedagencyofficial@gmail.com?subject=unsubscribe>',
+    '',
+    '--' + boundary,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    Buffer.from(text, 'utf8').toString('base64'),
+    '',
+    '--' + boundary,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    Buffer.from(html, 'utf8').toString('base64'),
+    '',
+    '--' + boundary + '--'
+  ].join('\r\n');
+
+  const raw = Buffer.from(rawMessage)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ raw });
+    const req = https.request({
+      hostname: 'gmail.googleapis.com',
+      path: '/gmail/v1/users/me/messages/send',
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d);
+          if (j.id) resolve(j);
+          else reject(new Error('Send error: ' + d));
+        } catch(e) { reject(new Error(d)); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 let transporter = null;
 function getTransporter() {
   if (transporter) return transporter;
-  if (!SMTP_PASS) { console.warn('[agency] SMTP_PASS missing, emails disabled'); return null; }
+  if (!SMTP_PASS) return null;
   transporter = nodemailer.createTransport({
     host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_PORT===465,
     auth: { user: SMTP_USER, pass: SMTP_PASS }
@@ -29,29 +137,32 @@ function getTransporter() {
   return transporter;
 }
 
-async function sendBookedEmail(pg, person, opp) {
-  const tx = getTransporter();
-  if (!tx) return;
-  const subject = `Zed CRM: Lead Booked - ${person.nameFirstName||''} ${person.nameLastName||''} ${person.emailsPrimaryEmail||''}`;
-  const html = `
-    <h2>Lead Booked / Scheduled</h2>
-    <p><b>Name:</b> ${person.nameFirstName||''} ${person.nameLastName||''}</p>
-    <p><b>Email:</b> ${person.emailsPrimaryEmail||''}</p>
-    <p><b>Phone:</b> ${person.phonesPrimaryPhoneNumber||''} ${person.phonesPrimaryPhoneCountryCode||''}</p>
-    <p><b>Company:</b> ${person.companyName||'-'}</p>
-    <p><b>Job Title:</b> ${person.jobTitle||'-'}</p>
-    <p><b>Status:</b> ${person.leadStatus||''}</p>
-    <p><b>Assigned To:</b> ${person.assignedToId||'None'}</p>
-    ${opp ? `<p><b>Opportunity:</b> ${opp.name||''} | Amount: ${opp.amountAmountMicros||''} ${opp.amountCurrencyCode||''} | Meeting: ${opp.closeDate||''} | Stage: ${opp.stage||''}</p>` : ''}
-    <p><b>Lead ID:</b> ${person.id}</p>
-    <hr><p>This is automated from Zed CRM (single default mail ${SMTP_USER} for all members, no other connections needed).</p>
-  `;
+async function sendLuxuryMail({ to, subject, html, text }) {
   try {
-    await tx.sendMail({ from: `"Zed" <${SMTP_USER}>`, to: EMAIL_TO, subject, html, text: html.replace(/<[^>]+>/g,' ') });
-    console.log(`[agency] email sent for ${person.id} to ${EMAIL_TO}`);
-    // also create timeline activity? insert into timelineActivities via note? skip for now
+    const res = await sendViaGmailApi({ to, subject, html, text });
+    console.log(`[agency] Luxury email delivered via Gmail API to ${to} (id: ${res.id})`);
+    return res;
   } catch (e) {
-    console.error('[agency] email failed', e.message);
+    console.warn('[agency] Gmail API failed, fallback to SMTP:', e.message);
+    const tx = getTransporter();
+    if (tx) {
+      return await tx.sendMail({ from: `"Zed" <${SMTP_USER}>`, to, subject, html, text });
+    }
+  }
+}
+
+async function sendBookedEmail(pg, person, opp) {
+  const mail = generateLeadNotificationEmail({ person, opp });
+  try {
+    await sendLuxuryMail({
+      to: EMAIL_TO,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text
+    });
+    console.log(`[agency] Luxury lead notification sent for ${person.id} to ${EMAIL_TO}`);
+  } catch (e) {
+    console.error('[agency] lead email failed', e.message);
   }
 }
 
@@ -275,15 +386,23 @@ async function handleAssignedDueDate(pg, schema) {
       console.log(`[agency] overdue 5d bump top ${p.id} due ${p.dueDate}`);
     }
     // If not completed even after 3 days past due (total 8d) and still New, send reminder to member gmail
-    const remind = await pg.query(`SELECT p.id, p."nameFirstName", p."emailsPrimaryEmail", p."dueDate", wm."userEmail", wm."nameFirstName" as mFirst FROM ${schema}."person" p JOIN ${schema}."workspaceMember" wm ON wm."id"=p."assignedToId" WHERE p."leadStatus"='New' AND p."dueDate" < NOW() - interval '3 days' AND p."deletedAt" IS NULL LIMIT 5`);
+    const remind = await pg.query(`SELECT p.id, p."nameFirstName", p."nameLastName", p."emailsPrimaryEmail", p."phonesPrimaryPhoneNumber", p."phonesPrimaryPhoneCountryCode", p."companyId", p."leadStatus", p."dueDate", wm."userEmail", wm."nameFirstName" as mFirst FROM ${schema}."person" p JOIN ${schema}."workspaceMember" wm ON wm."id"=p."assignedToId" WHERE p."leadStatus"='New' AND p."dueDate" < NOW() - interval '3 days' AND p."deletedAt" IS NULL LIMIT 5`);
     for (const r of remind.rows) {
-      const tx = getTransporter();
-      if (!tx || !r.userEmail) continue;
-      // Avoid spamming: only send if not sent in last 3 days (check via updatedAt? simple: send and update a flag? For now just send)
+      if (!r.userEmail) continue;
       try {
-        await tx.sendMail({ from: `"Zed" <${SMTP_USER}>`, to: r.userEmail, subject: `Reminder: Lead ${r.nameFirstName||''} overdue 8 days`, html: `<p>Hi ${r.mFirst||''},</p><p>Lead <b>${r.nameFirstName||''} ${r.emailsPrimaryEmail||''}</b> assigned to you is overdue (due ${r.dueDate}). Please update status.</p><p>Lead ID: ${r.id}</p>`, text: `Lead ${r.id} overdue` });
-        console.log(`[agency] reminder sent to ${r.userEmail} for ${r.id}`);
-        // Touch updatedAt to avoid immediate resend next poll (optional)
+        const dueMail = generateDueDateNotificationEmail({
+          person: r,
+          memberName: r.mFirst || 'Team Member',
+          dueDate: new Date(r.dueDate).toLocaleDateString() + ' (Overdue)',
+          isOverdue: true
+        });
+        await sendLuxuryMail({
+          to: r.userEmail,
+          subject: dueMail.subject,
+          html: dueMail.html,
+          text: dueMail.text
+        });
+        console.log(`[agency] luxury overdue reminder sent to ${r.userEmail} for ${r.id}`);
         await pg.query(`UPDATE ${schema}."person" SET "updatedAt"=NOW() WHERE id=$1`, [r.id]);
       } catch (e) { console.error('[agency] reminder failed', e.message); }
     }
