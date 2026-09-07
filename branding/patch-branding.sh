@@ -481,60 +481,77 @@ if (fs.existsSync(authServiceFile)) {
         const userEmail = (rawEmail || '').toLowerCase().trim();
         console.log('[Zed-Auth] Direct Social SSO login initiated for:', userEmail, 'provider:', authProvider);
 
-        let existingUser = await this.userRepository.findOne({
-            where: { email: userEmail }
-        });
-
-        if (!existingUser) {
-            existingUser = await this.userRepository.save({
-                email: userEmail,
-                firstName: firstName || 'Zed',
-                lastName: lastName || 'User',
-                isEmailVerified: true
-            });
-            console.log('[Zed-Auth] Auto-created new user:', existingUser.id, userEmail);
-        } else if (!existingUser.isEmailVerified) {
-            existingUser.isEmailVerified = true;
-            await this.userRepository.save(existingUser);
-        }
-
-        let defaultWorkspace = await this.workspaceRepository.findOne({
-            order: { createdAt: 'ASC' }
-        });
-
-        if (defaultWorkspace) {
-            try {
-                if (this.userWorkspaceService && typeof this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace === 'function') {
-                    await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(existingUser, defaultWorkspace);
-                    console.log('[Zed-Auth] Workspace membership ensured for:', userEmail);
-                }
-            } catch (err) {
-                console.log('[Zed-Auth] addUserToWorkspace notice:', err.message);
-            }
-        }
-
-        const loginToken = await this.loginTokenService.generateLoginToken(
-            existingUser.email,
-            defaultWorkspace ? defaultWorkspace.id : undefined,
-            authProvider
-        );
-        console.log('[Zed-Auth] Generated loginToken for:', userEmail);
-
-        let redirectUrl;
         try {
-            redirectUrl = this.computeRedirectURI({
-                loginToken: loginToken.token,
-                workspace: defaultWorkspace,
-                billingCheckoutSessionState,
-                returnToPath: returnToPath || '/objects/people'
-            });
-        } catch (redirErr) {
-            console.log('[Zed-Auth] computeRedirectURI fallback:', redirErr.message);
-            const frontUrl = process.env.FRONT_BASE_URL || process.env.FRONTEND_URL || 'https://zed-agency-crm.vercel.app';
-            redirectUrl = frontUrl.replace(/\\/$/, '') + '/auth/verify?loginToken=' + encodeURIComponent(loginToken.token) + '&returnToPath=' + encodeURIComponent(returnToPath || '/objects/people');
-        }
+            let existingUser = userEmail ? await this.userRepository.findOneBy({
+                email: userEmail
+            }) : null;
 
-        return redirectUrl;
+            if (!existingUser) {
+                existingUser = await this.userRepository.save({
+                    email: userEmail,
+                    firstName: firstName || 'Zed',
+                    lastName: lastName || 'User',
+                    isEmailVerified: true
+                });
+                console.log('[Zed-Auth] Auto-created new user:', existingUser.id, userEmail);
+            } else if (!existingUser.isEmailVerified) {
+                existingUser.isEmailVerified = true;
+                await this.userRepository.save(existingUser);
+            }
+
+            let defaultWorkspace = null;
+            if (workspaceId) {
+                defaultWorkspace = await this.workspaceRepository.findOneBy({ id: workspaceId });
+            }
+            if (!defaultWorkspace) {
+                const workspaces = await this.workspaceRepository.find({
+                    order: { createdAt: 'ASC' },
+                    take: 1
+                });
+                defaultWorkspace = workspaces[0];
+            }
+            if (!defaultWorkspace) {
+                defaultWorkspace = await this.workspaceRepository.findOneBy({ id: '680276a5-61db-4c53-a77f-0d53950c304d' });
+            }
+
+            if (defaultWorkspace) {
+                try {
+                    if (this.userWorkspaceService && typeof this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace === 'function') {
+                        await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(existingUser, defaultWorkspace);
+                        console.log('[Zed-Auth] Workspace membership ensured for:', userEmail);
+                    }
+                } catch (err) {
+                    console.log('[Zed-Auth] addUserToWorkspace notice:', err.message);
+                }
+            }
+
+            const loginToken = await this.loginTokenService.generateLoginToken(
+                existingUser.email,
+                defaultWorkspace ? defaultWorkspace.id : undefined,
+                authProvider
+            );
+            console.log('[Zed-Auth] Generated loginToken for:', userEmail);
+
+            let redirectUrl;
+            try {
+                redirectUrl = this.computeRedirectURI({
+                    loginToken: loginToken.token,
+                    workspace: defaultWorkspace,
+                    billingCheckoutSessionState,
+                    returnToPath: returnToPath || '/objects/people'
+                });
+            } catch (redirErr) {
+                console.log('[Zed-Auth] computeRedirectURI fallback:', redirErr.message);
+                const frontUrl = process.env.FRONT_BASE_URL || process.env.FRONTEND_URL || 'https://zed-agency-crm.vercel.app';
+                redirectUrl = frontUrl.replace(/\\/$/, '') + '/auth/verify?loginToken=' + encodeURIComponent(loginToken.token) + '&returnToPath=' + encodeURIComponent(returnToPath || '/objects/people');
+            }
+
+            return redirectUrl;
+        } catch (authError) {
+            console.error('[Zed-Auth Critical Error]:', authError);
+            const frontUrl = process.env.FRONT_BASE_URL || process.env.FRONTEND_URL || 'https://zed-agency-crm.vercel.app';
+            return frontUrl.replace(/\\/$/, '') + '/welcome?error=' + encodeURIComponent(authError.message);
+        }
     }
     async signInUpWithSocialSso(args, provider) {
         return this.signInUpWithSocialSSO(args, provider);
