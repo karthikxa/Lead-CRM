@@ -1,9 +1,9 @@
 # Zed Render 512MB optimized — single web service, ultra-low memory footprint
 FROM twentycrm/twenty:latest
 
-# NOTE: --expose-gc must be a NODE arg, NOT in NODE_OPTIONS (Render strips it).
-# We pass it directly via ENTRYPOINT below. NODE_OPTIONS only gets heap limit.
-ENV NODE_OPTIONS="--max-old-space-size=380"
+# Do NOT set a global NODE_OPTIONS heap cap — it applies to every node subprocess
+# (patch script, proxy, etc.) and causes OOM before NestJS even starts.
+# Heap limit is set ONLY on the NestJS exec in ENTRYPOINT below.
 ENV MALLOC_ARENA_MAX=2
 ENV UV_THREADPOOL_SIZE=2
 ENV NODE_ENV=production
@@ -39,7 +39,10 @@ COPY scripts/zed-luxury-email.js /app/scripts/zed-luxury-email.js
 
 EXPOSE 3000
 # ENTRYPOINT strategy:
-# 1. Run patch-branding.sh sequentially to patch files and start proxy daemon on PUBLIC port
-# 2. Exec NestJS on internal port 3001 in foreground as PID 1
-ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --expose-gc dist/main"]
+# 1. Run patch-branding.sh sequentially — patch files and start proxy daemon on PUBLIC port
+# 2. Exec NestJS on internal port 3001 as foreground PID 1
+#    --max-old-space-size=320  → leave ~192MB for OS + Redis + proxy (512 total)
+#    --optimize-for-size       → V8 picks smaller code size over speed, saves ~20-40MB
+#    --expose-gc               → allow manual GC triggers in code
+ENTRYPOINT ["/bin/sh", "-c", "sh /app/patch-branding.sh; PORT=3001 NODE_PORT=3001 exec /app/entrypoint.sh node --max-old-space-size=320 --optimize-for-size --expose-gc dist/main"]
 
