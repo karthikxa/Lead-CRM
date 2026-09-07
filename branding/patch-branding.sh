@@ -1027,6 +1027,28 @@ if (fs.existsSync(modulesModuleFile)) {
     console.log('[Zed] Patched modules.module.js: stripped Messaging & Calendar modules completely (saves ~100MB heap)!');
 }
 
+// 0c. Inject proactive memory manager into main.js
+const mainFile = path.join(SERVER_DIR, 'main.js');
+if (fs.existsSync(mainFile)) {
+    let mainContent = fs.readFileSync(mainFile, 'utf8');
+    if (!mainContent.includes('// Zed Memory Watchdog')) {
+        const watchdog = `
+// Zed Memory Watchdog
+setInterval(() => {
+  if (typeof global.gc === 'function') {
+    const mem = process.memoryUsage();
+    if (mem.rss > 410 * 1024 * 1024 || mem.heapUsed > 320 * 1024 * 1024) {
+      try { global.gc(); } catch (e) {}
+    }
+  }
+}, 5000);
+`;
+        mainContent = watchdog + mainContent;
+        fs.writeFileSync(mainFile, mainContent, 'utf8');
+        console.log('[Zed] Patched main.js: injected proactive memory watchdog!');
+    }
+}
+
 console.log('[Zed] All patches applied cleanly with Single-Domain Redirects, Direct Google OAuth & Complete Rebrand!');
 EOF
 
@@ -1098,11 +1120,28 @@ function elapsed() { return Math.round((Date.now() - startTime) / 1000) + 's'; }
 
 // HTTP reverse proxy
 const proxy = http.createServer((clientReq, clientRes) => {
+  const origin = clientReq.headers.origin || 'https://zed-agency-crm.vercel.app';
+
+  // CRITICAL: Always respond 204 to OPTIONS with full CORS headers so browser never throws "Failed to fetch"
+  if (clientReq.method === 'OPTIONS') {
+    clientRes.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': clientReq.headers['access-control-request-headers'] || 'Content-Type, Authorization, X-Requested-With, Accept, Apollo-Require-Preflight',
+      'Access-Control-Max-Age': '86400'
+    });
+    clientRes.end();
+    return;
+  }
+
   // CRITICAL: Always respond 200 immediately to /healthz so Render health checker & keepalive cron NEVER time out!
   if (clientReq.url === '/healthz' || clientReq.url === '/healthz/' || clientReq.url.startsWith('/healthz?')) {
     clientRes.writeHead(200, {
       'Content-Type': 'text/plain',
-      'X-Zed-Status': nestReady ? 'ready' : 'starting'
+      'X-Zed-Status': nestReady ? 'ready' : 'starting',
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true'
     });
     clientRes.end(nestReady ? 'Zed CRM is ready' : 'Zed CRM is starting...');
     return;
@@ -1135,14 +1174,27 @@ const proxy = http.createServer((clientReq, clientRes) => {
         diag.mainTail = mc.slice(-600);
       }
     } catch(e) { diag.mainErr = e.message; }
-    clientRes.writeHead(200, { 'Content-Type': 'application/json' });
+    clientRes.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true'
+    });
     clientRes.end(JSON.stringify(diag, null, 2));
     return;
   }
 
   if (!nestReady || !activeNestPort) {
-    clientRes.writeHead(200, { 'Content-Type': 'text/plain', 'X-Zed-Status': 'starting' });
-    clientRes.end('Zed CRM is starting, please refresh in a moment...');
+    clientRes.writeHead(503, {
+      'Content-Type': 'application/json',
+      'X-Zed-Status': 'starting',
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Retry-After': '5'
+    });
+    clientRes.end(JSON.stringify({
+      statusCode: 503,
+      message: 'Zed CRM is starting up, please wait a moment...'
+    }));
     return;
   }
 
@@ -1161,9 +1213,13 @@ const proxy = http.createServer((clientReq, clientRes) => {
 
   proxyReq.on('error', err => {
     if (!clientRes.headersSent) {
-      clientRes.writeHead(502, { 'Content-Type': 'text/plain' });
+      clientRes.writeHead(502, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true'
+      });
+      clientRes.end(JSON.stringify({ error: 'Gateway error: ' + err.message }));
     }
-    clientRes.end('Gateway error: ' + err.message);
   });
 
   clientReq.pipe(proxyReq, { end: true });
@@ -1203,6 +1259,10 @@ function checkPort(port) {
 }
 
 function startWorkflowWorker() {
+  if (process.env.ENABLE_AGENCY_WORKER !== 'true') {
+    console.log('[Zed-Proxy] Agency Workflow Worker disabled in web container to preserve 512MB RAM budget.');
+    return;
+  }
   const workerPath = '/app/scripts/agency-workflow-worker.js';
   if (fs.existsSync(workerPath)) {
     console.log('[Zed-Proxy] Running Agency Workflow Worker in-process (zero child-process overhead)...');
@@ -1244,7 +1304,7 @@ process.on('SIGINT',  () => { proxy.close(); process.exit(0); });
 PROXYEOF
 
 echo "[Zed] Reverse proxy written to /tmp/zed-proxy.js (PUBLIC:${PORT:-10000} → INTERNAL:3001)"
-NODE_PATH=/app/packages/twenty-server/node_modules:/app/node_modules ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=48 /tmp/zed-proxy.js &
+ZED_PUBLIC_PORT=${PORT:-10000} ZED_INTERNAL_PORT=3001 node --max-old-space-size=32 /tmp/zed-proxy.js &
 sleep 0.5
 echo "[Zed] Reverse proxy listening on port ${PORT:-10000}."
 
