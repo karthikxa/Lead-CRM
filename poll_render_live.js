@@ -51,12 +51,12 @@ async function testEndpoints() {
 }
 
 async function main() {
-  console.log('Monitoring Render deploy dep-daefl1qd0e5s738apndg...');
-  for (let i = 0; i < 40; i++) {
+  console.log('Monitoring latest Render deploy...');
+  for (let i = 0; i < 50; i++) {
     const deploys = await renderReq(`/services/${SERVICE_ID}/deploys?limit=2`);
     const ts = new Date().toLocaleTimeString('en-IN');
     if (Array.isArray(deploys) && deploys[0]) {
-      const d = deploys[0].deploy;
+      const d = deploys[0].deploy || deploys[0];
       console.log(`[${ts}] ${d.id} | ${d.status}`);
       await checkLogs();
       if (d.status === 'live') {

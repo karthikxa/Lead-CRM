@@ -52,3 +52,10 @@ fetch_latest_logs.js
 get_*.js
 
 
+
+# Dependencies and caches
+node_modules/
+**/node_modules/
+__pycache__/
+**/__pycache__/
+

@@ -1,0 +1,3342 @@
+[
+  {
+    "type": "node",
+    "id": 310504820,
+    "lat": 13.084889,
+    "lon": 80.2826483,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Tamil Nadu Government Dental College & Hospital, Chennai",
+      "name:ta": "\u0ba4\u0bae\u0bbf\u0bb4\u0bcd\u0ba8\u0bbe\u0b9f\u0bc1 \u0b85\u0bb0\u0b9a\u0bc1 \u0baa\u0bb2\u0bcd \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5\u0b95\u0bcd \u0b95\u0bb2\u0bcd\u0bb2\u0bc2\u0bb0\u0bbf \u0bae\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0bcd \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5\u0bae\u0ba9\u0bc8, \u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8",
+      "wikidata": "Q5588794",
+      "wikimedia_commons": "Category:Government Dental Hospital and College, Chennai",
+      "wikipedia": "en:Government Dental Hospital and College, Chennai"
+    }
+  },
+  {
+    "type": "node",
+    "id": 1015571601,
+    "lat": 13.0321291,
+    "lon": 80.1801201,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "SRM Dental Hospital"
+    }
+  },
+  {
+    "type": "node",
+    "id": 2253361647,
+    "lat": 12.9842586,
+    "lon": 80.1886083,
+    "tags": {
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Dr. Janardhanan Multispeciality Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 2559180846,
+    "lat": 13.0929667,
+    "lon": 80.2236256,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housename": "Dr. A. Aniz",
+      "addr:housenumber": "158",
+      "addr:neighbourhood": "O Block",
+      "addr:postcode": "600102",
+      "addr:street": "30th Street",
+      "addr:suburb": "Anna Nagar East",
+      "amenity": "hospital",
+      "emergency": "yes",
+      "healthcare": "hospital",
+      "name": "Jaws Dental Foundation"
+    }
+  },
+  {
+    "type": "node",
+    "id": 3470862095,
+    "lat": 13.0252375,
+    "lon": 80.2228534,
+    "tags": {
+      "addr:city": "Saidapet",
+      "addr:postcode": "600015",
+      "addr:street": "Jones Road",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smile Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 3471088863,
+    "lat": 13.0242232,
+    "lon": 80.2231722,
+    "tags": {
+      "addr:city": "Saidapet",
+      "addr:postcode": "600015",
+      "addr:street": "Karaneeswar Koil Street",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Tooth Craft"
+    }
+  },
+  {
+    "type": "node",
+    "id": 3494254196,
+    "lat": 13.0923775,
+    "lon": 80.2777601,
+    "tags": {
+      "addr:street": "General Muthiah Street",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Bohra Tooth Palace"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5098123367,
+    "lat": 12.8470907,
+    "lon": 80.2267617,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Novel Dental Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5146935325,
+    "lat": 12.8045685,
+    "lon": 80.2238168,
+    "tags": {
+      "amenity": "dentist",
+      "name": "LIMAT Dental Care",
+      "opening_hours": "Mo-Su 09:00-21:00",
+      "phone": "7299-04-2222, 7299-05-2222"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5146968863,
+    "lat": 12.8060158,
+    "lon": 80.2243614,
+    "tags": {
+      "amenity": "dentist",
+      "name": "OMR Dental Center"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5306591795,
+    "lat": 13.0857438,
+    "lon": 80.2029307,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sha Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5332445810,
+    "lat": 12.9870178,
+    "lon": 80.2582033,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Family Dentistry Center"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5372708871,
+    "lat": 13.0874781,
+    "lon": 80.1940182,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Parasu Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5372752957,
+    "lat": 13.0855051,
+    "lon": 80.192537,
+    "tags": {
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "Anbu Dental Implant & Maxillofacial Clinic",
+      "opening_hours": "Mo-Su 09:30-13:30, 16:30-21:30",
+      "phone": "9940753151"
+    }
+  },
+  {
+    "type": "node",
+    "id": 5372753056,
+    "lat": 13.0847871,
+    "lon": 80.1924469,
+    "tags": {
+      "addr:housenumber": "100",
+      "addr:street": "Kamarajar Nagar, Padi kuppam road, Anna Nagar West, Chennai",
+      "amenity": "dentist",
+      "name": "White Dental Clinic",
+      "phone": "9840093689"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6914937661,
+    "lat": 13.1173689,
+    "lon": 80.2315973,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "80/2, 34 Srp Koil St., T.V.K.Nagar",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "Sri Sai Sankara Dental Clinic And Orthodontic Cent",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6915211726,
+    "lat": 12.9850289,
+    "lon": 80.1891057,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "5/4, 29Th St., Nanganallur, Chennai",
+      "addr:postcode": "600060",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "Sriram Dental Clinic and Orthodontic Centre",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6925987220,
+    "lat": 13.0247168,
+    "lon": 80.1493795,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "N..94 First Floor,Kundrathure Main Road,Porur,Chennai",
+      "addr:postcode": "600016",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "name": "Getwel Dental Clinic",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6928936160,
+    "lat": 13.0465492,
+    "lon": 80.2422899,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "56,(Old No.105), G.N. Chetty Road, First Floor, T.Nagar",
+      "addr:postcode": "600017",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Dr. Udhaya Rajas Dental Centre",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6929395441,
+    "lat": 12.9866317,
+    "lon": 80.189842,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Ayodhya Flats No 5 ,Nanganallur",
+      "addr:postcode": "600061",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Warriers Dental Care",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6929910241,
+    "lat": 13.0874336,
+    "lon": 80.2177075,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Krishna Dental Clinic W-120,Anna Nagar",
+      "addr:postcode": "600040",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Krishna Dental Clinic, Chennai",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6934271086,
+    "lat": 13.0452205,
+    "lon": 80.1861023,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "91/2,Arcot Road,Virugambakkam",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "M.L Dental Clinic",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6934408780,
+    "lat": 13.0373853,
+    "lon": 80.2318856,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "No 53/1 Burkit Road T.Nagar",
+      "addr:postcode": "600017",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Shree Sai Krupa Dental Care",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6936310669,
+    "lat": 13.0404661,
+    "lon": 80.2244103,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "# 45 Jubilee Road, West Mambalam",
+      "addr:postcode": "600033",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sulochana Dental Care Center",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6936324681,
+    "lat": 13.0341895,
+    "lon": 80.2325615,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Old No.33,New No.10.Mannar Street,T.Nagar",
+      "addr:postcode": "600017",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "Dr Vas Dental Clinic",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6936339753,
+    "lat": 13.0439283,
+    "lon": 80.2727732,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "#56, Dr.Radha Krishnan Salai,Opposite Kalyani Hospital,Mylapore",
+      "addr:postcode": "600004",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Rajan Dental Institute Pvt. Ltd.",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6936709087,
+    "lat": 12.9857261,
+    "lon": 80.2011133,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "No.1/2 Amaravathy Street, Bharath Nagar, Adambakkam, Chennai",
+      "addr:postcode": "600088",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Caps Dental Clinic and Face and Jaw Centre",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 6937420406,
+    "lat": 13.0438892,
+    "lon": 80.2387923,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "54, G.N. Chetty Road, T Nagar",
+      "addr:postcode": "600017",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sri Viveka Institute Of Dental Health",
+      "source": "OpenGovernmentData"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7177259685,
+    "lat": 12.9751829,
+    "lon": 80.1956824,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7177268687,
+    "lat": 12.9739445,
+    "lon": 80.1916658,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Glow Dental"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7206206386,
+    "lat": 12.9233733,
+    "lon": 80.1301931,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "\u0bae\u0bcb\u0b95\u0ba9\u0bcd \u0baa\u0bb2\u0bcd \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5\u0bae\u0ba9\u0bc8",
+      "name:en": "Mohan dental hospital"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7263990020,
+    "lat": 13.054776,
+    "lon": 80.2499299,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Chennai",
+      "addr:postcode": "600031",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Pulp Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7652633326,
+    "lat": 13.0363457,
+    "lon": 80.2164706,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "23/49, G1, Ground Floor, Chandra Flats,",
+      "addr:postcode": "600033",
+      "addr:street": "7th Avenue",
+      "name": "Malligai Dental Academy",
+      "office": "educational_institution"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7677310685,
+    "lat": 13.1057366,
+    "lon": 80.2076677,
+    "tags": {
+      "addr:housenumber": "9 old no 5/2",
+      "addr:postcode": "600049",
+      "addr:street": "South Mada St",
+      "amenity": "dentist",
+      "email": "anselmfabi@gmail.com",
+      "healthcare": "dentist",
+      "name:en": "Packiam dental clinic and Juan orthodontic center",
+      "opening_hours": "Mo-Sa 18:00-21:00",
+      "phone": "9688867716"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702352,
+    "lat": 13.2792646,
+    "lon": 80.2595386,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Minjur",
+      "addr:postcode": "600019",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "RP Multispeciality Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702360,
+    "lat": 13.2608481,
+    "lon": 80.2835962,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Reddy Palayam, Attipattu, Minjur",
+      "addr:postcode": "600120",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Star Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702377,
+    "lat": 13.1554438,
+    "lon": 80.2569022,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Chinnasekkadu, Manali",
+      "addr:postcode": "600051",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smile Care Multispeciality Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702385,
+    "lat": 13.1346648,
+    "lon": 80.2099619,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Kolathur",
+      "addr:postcode": "600099",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sunil's Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702403,
+    "lat": 13.1628639,
+    "lon": 80.2604165,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Kamaraj Salai, Manali",
+      "addr:postcode": "600051",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "TJ Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702408,
+    "lat": 13.2395859,
+    "lon": 80.1624902,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Sholavaram",
+      "addr:postcode": "600067",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Golden Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702416,
+    "lat": 13.161655,
+    "lon": 80.204474,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Puzhal",
+      "addr:postcode": "600066",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Care N Cure Dental Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7818702421,
+    "lat": 13.151965,
+    "lon": 80.299566,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Kaladipet, Chennai",
+      "addr:postcode": "600019",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "I Smile Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840737,
+    "lat": 13.0469121,
+    "lon": 80.1843538,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Alwartirunagar, Valasaravakkam, Chennai",
+      "addr:postcode": "600095",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Tamilarasi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840748,
+    "lat": 13.0401817,
+    "lon": 80.1803453,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Valasaravakkam",
+      "addr:postcode": "600087",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "name": "Vasanthi Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840757,
+    "lat": 13.0388814,
+    "lon": 80.1807022,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Chowthri Nagar, Alwartirunagar, Valasaravakkam, Chennai",
+      "addr:postcode": "600087",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Amirdham Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840777,
+    "lat": 13.0440721,
+    "lon": 80.1821884,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Palaniappa Nagar, Valasaravakkam",
+      "addr:postcode": "600087",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Venu Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840779,
+    "lat": 13.0416646,
+    "lon": 80.1811652,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Valasaravakkam",
+      "addr:postcode": "600087",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Apollo White Dental Clinic & Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7819840805,
+    "lat": 13.0437221,
+    "lon": 80.1190471,
+    "tags": {
+      "addr:district": "Tiruvallur",
+      "addr:full": "Sornapuri, Kattupakkam",
+      "addr:postcode": "600056",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Arjun Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802364,
+    "lat": 12.7961969,
+    "lon": 80.0262959,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Maraimalai Nagar",
+      "addr:postcode": "603209",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Punnagai Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802366,
+    "lat": 12.7577542,
+    "lon": 80.0029118,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Singaperumal Koil",
+      "addr:postcode": "603204",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802367,
+    "lat": 12.7638952,
+    "lon": 80.0039609,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:postcode": "603204",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Sulaiman Memorial Dental and Child Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802379,
+    "lat": 12.8182181,
+    "lon": 80.0398579,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Potheri, Kattankulathur",
+      "addr:postcode": "603203",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Raga Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802387,
+    "lat": 12.79639,
+    "lon": 80.025556,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Maraimalai Nagar",
+      "addr:postcode": "603209",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Annam Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802395,
+    "lat": 12.7967233,
+    "lon": 80.0248907,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Maraimalai Nagar",
+      "addr:postcode": "603209",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Shri Dhanwantari Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802397,
+    "lat": 12.7939533,
+    "lon": 80.0240443,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Maraimalai Nagar",
+      "addr:postcode": "603204",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Srinath's Dental Zone",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802418,
+    "lat": 12.798589,
+    "lon": 80.023464,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Maraimalai Nagar",
+      "addr:postcode": "603209",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Reva Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820802429,
+    "lat": 12.7607515,
+    "lon": 80.0031328,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:postcode": "603204",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Vijaya Lakshmi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874205,
+    "lat": 12.84764,
+    "lon": 80.063379,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Nandhivaram, Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Cure Advanced Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874206,
+    "lat": 12.8554409,
+    "lon": 80.0537082,
+    "tags": {
+      "addr:district": "Kanchipuram",
+      "addr:full": "Kabali Nagar, TTC Nagar, Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sree Annai Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874221,
+    "lat": 12.8428242,
+    "lon": 80.0589828,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Gandhi Nagar, Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Siva Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874224,
+    "lat": 12.9168535,
+    "lon": 80.0880494,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:postcode": "600063",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Shiva Sakthi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874229,
+    "lat": 12.843353,
+    "lon": 80.059497,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Adarsh Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874237,
+    "lat": 12.8391042,
+    "lon": 80.0569385,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kumaran Nagar, Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Joseph Dentcare",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874238,
+    "lat": 12.9186976,
+    "lon": 80.0866455,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:postcode": "600063",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kayathri Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874241,
+    "lat": 12.866317,
+    "lon": 80.074451,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Bharathi Nagar, Urapakkam",
+      "addr:postcode": "603210",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sri Ram Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874261,
+    "lat": 12.8101142,
+    "lon": 80.2279039,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "OMR, Padur",
+      "addr:postcode": "603103",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Grace Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874265,
+    "lat": 12.8451975,
+    "lon": 80.0605927,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sri Bhavani Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874266,
+    "lat": 12.804836,
+    "lon": 80.2241181,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Padur",
+      "addr:postcode": "603103",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Manav Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874272,
+    "lat": 12.867578,
+    "lon": 80.0674859,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Krithic Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874278,
+    "lat": 12.8413152,
+    "lon": 80.0562967,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Radiant Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874286,
+    "lat": 12.8410178,
+    "lon": 80.0570283,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Shri Lakshmi Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7820874294,
+    "lat": 12.8430963,
+    "lon": 80.0583147,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Guduvanchery",
+      "addr:postcode": "603202",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Natural Smile A Complete Family Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906813,
+    "lat": 12.9286041,
+    "lon": 80.1318966,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sai Suguna Dental and Physiotherapy Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906815,
+    "lat": 12.9258135,
+    "lon": 80.1018282,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Mullai Nagar, Tambaram",
+      "addr:postcode": "600045",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "AJ Multi Speciality Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906826,
+    "lat": 12.9368061,
+    "lon": 80.1399708,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600064",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smile Craftz Dental Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906830,
+    "lat": 12.9274239,
+    "lon": 80.1315697,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "SI Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906843,
+    "lat": 12.9259119,
+    "lon": 80.1271937,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram East, Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Amarnathan's Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906848,
+    "lat": 12.9267246,
+    "lon": 80.1118726,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Brindavan Colony, Tambaram",
+      "addr:postcode": "600045",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Saraswati Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906849,
+    "lat": 12.9232994,
+    "lon": 80.1258348,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "level": "2",
+      "name": "Radiant Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906870,
+    "lat": 12.927009,
+    "lon": 80.112842,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600045",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Balaji Cosmetic and Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906884,
+    "lat": 12.9306784,
+    "lon": 80.1280886,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Gandhi Nagar, Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Thamarai's Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906886,
+    "lat": 12.932104,
+    "lon": 80.129737,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "A.I. Dental Care and Facio Maxillary Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906888,
+    "lat": 12.9271491,
+    "lon": 80.1131733,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Shanmugam, Tambaram",
+      "addr:postcode": "600045",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Saravana Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906897,
+    "lat": 12.9368106,
+    "lon": 80.142673,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600064",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "MSR Dentistry",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906901,
+    "lat": 12.9352442,
+    "lon": 80.1255855,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kadaperi, Virugambakkam",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "L S Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906904,
+    "lat": 12.9266108,
+    "lon": 80.1312816,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600059",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Seethalakshmi Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7821906909,
+    "lat": 12.9268774,
+    "lon": 80.1131365,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Tambaram",
+      "addr:postcode": "600045",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sai Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822259993,
+    "lat": 12.9113075,
+    "lon": 80.1962603,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Medavakkam",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kavi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822259995,
+    "lat": 12.912214,
+    "lon": 80.229384,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Karappakam",
+      "addr:postcode": "600097",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Shri Sai Children's Hospital and Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260008,
+    "lat": 12.9150815,
+    "lon": 80.2297731,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Karappakam",
+      "addr:postcode": "600097",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Apollo White Dental Clinic and Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260014,
+    "lat": 12.9194752,
+    "lon": 80.1711373,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Santhosapuram, Vengavasal",
+      "addr:postcode": "600073",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smile and Shine Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260019,
+    "lat": 12.9169604,
+    "lon": 80.1706796,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Santhosapuram, Vengavasal",
+      "addr:postcode": "600073",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Lakshmi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260023,
+    "lat": 12.9162911,
+    "lon": 80.1747091,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Santhosapuram, Vengavasal",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Vaibhav Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260029,
+    "lat": 12.9088618,
+    "lon": 80.1574156,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Shanthi Nikethan Colony, Madambakkam",
+      "addr:postcode": "600126",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Eternal Smiles Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260031,
+    "lat": 12.912853,
+    "lon": 80.155156,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Selaiyur",
+      "addr:postcode": "600073",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Clove Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260035,
+    "lat": 12.9008257,
+    "lon": 80.2268213,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Sholinganallur",
+      "addr:postcode": "600119",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Mr. and Mrs. Tooth Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260036,
+    "lat": 12.9180946,
+    "lon": 80.1789269,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Vijayanagaram, Santhosapuram, Medavakkam",
+      "addr:postcode": "600073",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Dr. Naveen's Tooth Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260041,
+    "lat": 12.9171051,
+    "lon": 80.1912712,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Munusamy Nagar, Vimala Nagar, Medavakkam",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Xpressions Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260049,
+    "lat": 12.9111935,
+    "lon": 80.1963279,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Puthu Nagar, Medavakkam",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Danta Raksha Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260052,
+    "lat": 12.9194652,
+    "lon": 80.1716769,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Santhosapuram, Vengavasal",
+      "addr:postcode": "600117",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "32 Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822260053,
+    "lat": 12.9153217,
+    "lon": 80.1792023,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Vijayanagaram, Santhosapuram, Medavakkam",
+      "addr:postcode": "600073",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Prabha Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543400,
+    "lat": 12.9571597,
+    "lon": 80.141249,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Chambers Colony, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Kavya Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543401,
+    "lat": 12.9393531,
+    "lon": 80.1823041,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Nanmangalam",
+      "addr:postcode": "600117",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kumaran Dental Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543405,
+    "lat": 12.9460297,
+    "lon": 80.1471915,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Purushothaman Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Bharathi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543406,
+    "lat": 12.9549234,
+    "lon": 80.1340441,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Nagappa Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Ray's Head, Neck Care Centre-ENT and Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543414,
+    "lat": 12.9388556,
+    "lon": 80.1758632,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Vijayalakshmi Nagar, Ullagaram",
+      "addr:postcode": "600117",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Mile Stone Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543419,
+    "lat": 12.940574,
+    "lon": 80.14892,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Velmurugan Nagar, Hasthinapuram, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "V.V. Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543428,
+    "lat": 12.956757,
+    "lon": 80.142958,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Vasan Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543435,
+    "lat": 12.924912,
+    "lon": 80.2045196,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Anna Nagar, Pallikaranai",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Vinu's Smile Care Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543437,
+    "lat": 12.9351033,
+    "lon": 80.1824847,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Medavakkam",
+      "addr:postcode": "600117",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Star Dental Care and Implant Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543442,
+    "lat": 12.9382376,
+    "lon": 80.2090817,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Pallikaranai",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Mangalaa Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543443,
+    "lat": 12.9551528,
+    "lon": 80.1448332,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Lakshmi Nagar, Shanthi Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "N.B Multi Speciality Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543449,
+    "lat": 12.9468913,
+    "lon": 80.1466231,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Purushothaman Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Prasanna Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543453,
+    "lat": 12.9575237,
+    "lon": 80.1443199,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Lakshmi Nagar, Shanthi Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Aura Dentistry",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543457,
+    "lat": 12.9459331,
+    "lon": 80.1460789,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Purushotham Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Signature Smiles",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543462,
+    "lat": 12.9370118,
+    "lon": 80.1751576,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Nanmangalam",
+      "addr:postcode": "600117",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Rekha Multi Speciality and Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543470,
+    "lat": 12.957785,
+    "lon": 80.142752,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kothandam Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Gold Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543472,
+    "lat": 12.938565,
+    "lon": 80.2074694,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Pallikaranai",
+      "addr:postcode": "600100",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Ramya Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543475,
+    "lat": 12.9486395,
+    "lon": 80.1575139,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Jamin Rayapettah, Chromepet",
+      "addr:postcode": "600064",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sara Smile Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543480,
+    "lat": 12.9351152,
+    "lon": 80.1469992,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Chitlapakkam",
+      "addr:postcode": "600064",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kumar Dental and Maxillofacial Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543482,
+    "lat": 12.9495249,
+    "lon": 80.1452951,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Radha Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Panacae Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543483,
+    "lat": 12.9423452,
+    "lon": 80.1411738,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Nehru Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sparkle Dent",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543487,
+    "lat": 12.9429329,
+    "lon": 80.1431628,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Hasthinapuram, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "David's Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543503,
+    "lat": 12.9524445,
+    "lon": 80.1442788,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Rajaji Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Mano Dental Clinic and Implant Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543506,
+    "lat": 12.942216,
+    "lon": 80.140802,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kumudham Colony, Nehru Nagar, Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smile Solutions Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7822543507,
+    "lat": 12.9505323,
+    "lon": 80.1436471,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Chromepet",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Bhavithra Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212560,
+    "lat": 13.0214884,
+    "lon": 80.166537,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kumudam Nagar, Mugalivakkam",
+      "addr:postcode": "600125",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Best Laser Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212563,
+    "lat": 12.9762353,
+    "lon": 80.2595769,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sara Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212564,
+    "lat": 12.9902459,
+    "lon": 80.0939484,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Rajeshwari Nagar, Jaganathapuram, Sikkarayapuram",
+      "addr:postcode": "600069",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Smile Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212568,
+    "lat": 13.0243553,
+    "lon": 80.1714555,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Sabari Nagar, Mugalivakkam",
+      "addr:postcode": "600125",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Padmavathi Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212580,
+    "lat": 12.9701253,
+    "lon": 80.1414713,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Bhavani Nagar, Pallavaram",
+      "addr:postcode": "600075",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212582,
+    "lat": 12.974187,
+    "lon": 80.132151,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Thiruneermalai, Pammal",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Nithilam Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212584,
+    "lat": 12.997309,
+    "lon": 80.0960119,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Jaganathapuram, Sikkarayapuram",
+      "addr:postcode": "600069",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Nalan Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212599,
+    "lat": 12.992453,
+    "lon": 80.095438,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kundrathur",
+      "addr:postcode": "600069",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Recure Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212612,
+    "lat": 12.9688751,
+    "lon": 80.0462287,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Kanchipuram",
+      "addr:postcode": "602109",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Dentiq Super Speciality Laser Dental Hospital",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212618,
+    "lat": 12.9752991,
+    "lon": 80.1327573,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Pasumpon Nagar, Pammal",
+      "addr:postcode": "600075",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Chirayu Dental Aesthetic Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212620,
+    "lat": 12.9714095,
+    "lon": 80.1422589,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Anna Nagar, Pallavaram",
+      "addr:postcode": "600044",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Vaishnavi Dental Care Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212625,
+    "lat": 12.9944176,
+    "lon": 80.0955035,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Devi Nagar, Jaganathapuram, Sikkarayapuram",
+      "addr:postcode": "600069",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "name": "Kamal Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212626,
+    "lat": 12.9734658,
+    "lon": 80.255325,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Valmiki Nagar, Swaminathan Nagar, Kottivakkam",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Zircon Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212635,
+    "lat": 12.979789,
+    "lon": 80.13867,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:full": "Iyyappan Nagar, Pallavaram",
+      "addr:postcode": "600064",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Janakheshwari Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823212639,
+    "lat": 12.9740036,
+    "lon": 80.1352422,
+    "tags": {
+      "addr:district": "Chengalpattu",
+      "addr:postcode": "600074",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Bright Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415021,
+    "lat": 12.978253,
+    "lon": 80.258947,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "Relief Dental Hospitals",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415024,
+    "lat": 12.9846827,
+    "lon": 80.2553427,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Kamaraj Nagar, Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Coast Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415028,
+    "lat": 12.996018,
+    "lon": 80.2616466,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "C.M. Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415034,
+    "lat": 12.9957433,
+    "lon": 80.2651165,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Anna Colony, Besant Nagar",
+      "addr:postcode": "600090",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Nathan Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415040,
+    "lat": 12.9851111,
+    "lon": 80.2621275,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Little Smiles Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415053,
+    "lat": 12.9832651,
+    "lon": 80.2559655,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Kamaraj Nagar, Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "Dr. Kavitha Iyer's Orthodontics & Dental Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415069,
+    "lat": 12.9867215,
+    "lon": 80.25497,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Ranganatha Puram, Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "R.R. Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823415082,
+    "lat": 12.9790152,
+    "lon": 80.2566246,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Thiruvanmiyur",
+      "addr:postcode": "600041",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sankara Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776195,
+    "lat": 13.0588744,
+    "lon": 80.2424194,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Nungambakkam, Chennai",
+      "addr:postcode": "600034",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "healthcare:speciality": "dentist",
+      "name": "Clove Dental",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776201,
+    "lat": 13.0510076,
+    "lon": 80.1988337,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Saligramam, Chennai",
+      "addr:postcode": "600093",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "R.K Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776204,
+    "lat": 13.0478238,
+    "lon": 80.1892231,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Alwartirunagar, Virugambakkam, Chennai",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Arun Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776218,
+    "lat": 13.041368,
+    "lon": 80.1959973,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "K.K. Nagar",
+      "addr:postcode": "600078",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Rose Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776226,
+    "lat": 13.048725,
+    "lon": 80.193674,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Saradha Nagar, Virugambakkam, Chennai",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "GV Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776230,
+    "lat": 13.0490907,
+    "lon": 80.188543,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Virugambakkam, Chennai",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Rahul Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776235,
+    "lat": 13.053266,
+    "lon": 80.2033729,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Saligramam, Chennai",
+      "addr:postcode": "600093",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Senthil Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776240,
+    "lat": 13.0535204,
+    "lon": 80.2036821,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Saligramam, Chennai",
+      "addr:postcode": "600093",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "SV Vision & Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776241,
+    "lat": 13.0541919,
+    "lon": 80.2093081,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Vadapalani, Chennai",
+      "addr:postcode": "600026",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Wings Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776255,
+    "lat": 13.055137,
+    "lon": 80.197119,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Virugambakkam, Chennai",
+      "addr:postcode": "600092",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Bithi Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7823776261,
+    "lat": 13.0460858,
+    "lon": 80.1868088,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Valasaravakkam, Chennai",
+      "addr:postcode": "600087",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. Balagopal's Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7824965226,
+    "lat": 13.0840323,
+    "lon": 80.2698608,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Chennai",
+      "addr:postcode": "600003",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dental Icons",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7824965236,
+    "lat": 13.0732526,
+    "lon": 80.25379,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Egmore, Chennai",
+      "addr:postcode": "600008",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Ranganathan Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7824965250,
+    "lat": 13.0828434,
+    "lon": 80.2288176,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "KVN Puram, Shenoy Nagar, Chennai",
+      "addr:postcode": "600030",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kavinaya Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7824965263,
+    "lat": 13.07947,
+    "lon": 80.257265,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Egmore, Chennai",
+      "addr:postcode": "600084",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Thirty 2 Dental Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825002778,
+    "lat": 13.1231248,
+    "lon": 80.2164517,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Sarojini Nagar, Kolathur",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Kamala Sayee Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825002783,
+    "lat": 13.1247301,
+    "lon": 80.2194621,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "M.N. Nagar, Kolathur",
+      "addr:postcode": "600099",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sunday Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009800,
+    "lat": 13.1272226,
+    "lon": 80.2174972,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Vivek Nagar, Kolathur",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "clinic",
+      "healthcare": "clinic",
+      "name": "American Dental Care",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009802,
+    "lat": 13.1209261,
+    "lon": 80.214363,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Poompuhar Nagar, Kolathur, Chennai",
+      "addr:postcode": "600099",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Ramchandras Jussmile Dental Clinic & Dental Implant Centre",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009808,
+    "lat": 13.1206026,
+    "lon": 80.2140335,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Kolathur, Chennai",
+      "addr:postcode": "600099",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Smileworks Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009810,
+    "lat": 13.1251973,
+    "lon": 80.2170726,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Sarojini Nagar, Kolathur",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sastha Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009811,
+    "lat": 13.1190292,
+    "lon": 80.2161172,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Poompuhar Nagar, Kolathur, Chennai",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "P.R.K Multispeciality Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009812,
+    "lat": 13.11628,
+    "lon": 80.224767,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Periyar Nagar, Perambur, Chennai",
+      "addr:postcode": "600082",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "CPL Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7825009822,
+    "lat": 13.1243638,
+    "lon": 80.2213617,
+    "tags": {
+      "addr:district": "Chennai",
+      "addr:full": "Somanathapuram, Perambur",
+      "addr:postcode": "600110",
+      "addr:state": "Tamil Nadu",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Arunz Dental Clinic",
+      "source": "Local Knowledge"
+    }
+  },
+  {
+    "type": "node",
+    "id": 7916491667,
+    "lat": 12.9651326,
+    "lon": 80.1921507,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "5/750",
+      "addr:postcode": "600091",
+      "addr:street": "Sabari Salai",
+      "amenity": "dentist",
+      "email": "dhaaranisdivinesmiles@gmail.com",
+      "healthcare": "dentist",
+      "healthcare:speciality": "dentist;orthodontics;periodontics",
+      "internet_access": "wlan",
+      "internet_access:fee": "customers",
+      "internet_access:ssid": "ddsmiles",
+      "level": "1",
+      "name": "Dhaarani\u2019s Divine Smiles",
+      "opening_hours": "Th-Tu 10:00-13:00,16:00-21:00",
+      "payment:cash": "yes",
+      "payment:credit_cards": "yes",
+      "payment:debit_cards": "yes",
+      "payment:google_pay": "yes",
+      "payment:upi": "yes",
+      "phone": "+91 63818 04443",
+      "website": "https://ovmstudios.in/server/ddsmiles/index.html",
+      "wheelchair": "no"
+    }
+  },
+  {
+    "type": "node",
+    "id": 8631827335,
+    "lat": 12.9826441,
+    "lon": 80.2253521,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9400398378,
+    "lat": 12.9442869,
+    "lon": 80.2082021,
+    "tags": {
+      "bench": "yes",
+      "bin": "no",
+      "bus": "yes",
+      "highway": "bus_stop",
+      "lit": "yes",
+      "name": "Balaji Dental College",
+      "public_transport": "platform",
+      "shelter": "yes"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9402008111,
+    "lat": 12.9441308,
+    "lon": 80.208506,
+    "tags": {
+      "bench": "yes",
+      "bin": "no",
+      "bus": "yes",
+      "highway": "bus_stop",
+      "lit": "yes",
+      "name": "Balaji Dental College",
+      "network": "Metropolitan Transport Corporation (Chennai) Ltd.",
+      "network:wikidata": "Q6825287",
+      "network:wikipedia": "en:Metropolitan Transport Corporation (Chennai)",
+      "operator": "Government of Tamil Nadu",
+      "operator:wikidata": "Q5589327",
+      "operator:wikipedia": "en:Government of Tamil Nadu",
+      "public_transport": "platform",
+      "shelter": "no"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9402008112,
+    "lat": 12.9441649,
+    "lon": 80.2083807,
+    "tags": {
+      "bus": "yes",
+      "name": "Balaji Dental College",
+      "network": "Metropolitan Transport Corporation (Chennai) Ltd.",
+      "network:wikidata": "Q6825287",
+      "network:wikipedia": "en:Metropolitan Transport Corporation (Chennai)",
+      "operator": "Government of Tamil Nadu",
+      "operator:wikidata": "Q5589327",
+      "operator:wikipedia": "en:Government of Tamil Nadu",
+      "public_transport": "stop_position"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9404967419,
+    "lat": 12.9443297,
+    "lon": 80.208265,
+    "tags": {
+      "bus": "yes",
+      "name": "Balaji Dental College",
+      "network": "Metropolitan Transport Corporation (Chennai) Ltd.",
+      "network:wikidata": "Q6825287",
+      "network:wikipedia": "en:Metropolitan Transport Corporation (Chennai)",
+      "operator": "Government of Tamil Nadu",
+      "operator:wikidata": "Q5589327",
+      "operator:wikipedia": "en:Government of Tamil Nadu",
+      "public_transport": "stop_position"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9444720904,
+    "lat": 12.9214652,
+    "lon": 80.1651302,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "141-168",
+      "addr:postcode": "600117",
+      "addr:street": "New Kunagkurichi, Gowriwakkam, Sembakkam",
+      "amenity": "hospital",
+      "email": "4squaresdentistry@gmail.com",
+      "emergency": "no",
+      "healthcare": "hospital",
+      "healthcare:speciality": "dentist;dental;dental_clinic",
+      "name": "4 Squares Dentistry",
+      "phone": "044 4859 2044",
+      "website": "https://www.4squaresdentistry.in/dental-clinic-gowrivakkam/"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9538903560,
+    "lat": 12.907488,
+    "lon": 80.2286126,
+    "tags": {
+      "amenity": "dentist",
+      "brand": "Clove;)",
+      "healthcare": "dentist"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9705283561,
+    "lat": 12.9681718,
+    "lon": 80.1894568,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "1A",
+      "addr:postcode": "600091",
+      "addr:street": "Medavakkam Main Road",
+      "amenity": "dentist",
+      "email": "justsmiledentalspecialities@gmail.com",
+      "name": "Just Smile Dental & ENT Specialities",
+      "opening_hours": "Mo-Sa 09:00-12:00; Mo-Sa 17:30-21:00",
+      "phone": "+91 81908 58855;+91 81908 58866"
+    }
+  },
+  {
+    "type": "node",
+    "id": 9964211104,
+    "lat": 13.058583,
+    "lon": 80.2434046,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Pratibha Dental Clinic",
+      "operator": "Dr. Logachander"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10013621157,
+    "lat": 13.1236904,
+    "lon": 80.2014984,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sri sai baba"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10036354897,
+    "lat": 12.838467,
+    "lon": 80.2286221,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Novel Dental Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10106243487,
+    "lat": 13.0937726,
+    "lon": 80.287202,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Fakhri Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10156175389,
+    "lat": 13.0984314,
+    "lon": 80.2867438,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Chindamani Dentral Centre"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10208798641,
+    "lat": 13.0964031,
+    "lon": 80.2902257,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dr. S. Aadil Ahamed"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10208901309,
+    "lat": 13.0965427,
+    "lon": 80.2896739,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "S. R. Dental Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10675561112,
+    "lat": 13.0484945,
+    "lon": 80.1794333,
+    "tags": {
+      "amenity": "dentist",
+      "name": "MS Dental clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10675568348,
+    "lat": 13.0483338,
+    "lon": 80.178998,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Janani dental care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10742375542,
+    "lat": 13.098707,
+    "lon": 80.2796729,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Gangasri Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10852482368,
+    "lat": 13.0404708,
+    "lon": 80.2592658,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Shriram Dental Clinic",
+      "opening_hours": "Mo-Sa 10:30-13:00; Mo-Sa 18:00-20:00"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10933682492,
+    "lat": 13.0976149,
+    "lon": 80.2799422,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Maruti Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10933682513,
+    "lat": 13.0980336,
+    "lon": 80.2798983,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Sree Krishna Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 10933856332,
+    "lat": 13.0945066,
+    "lon": 80.2792587,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Aakash Dental Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11419727742,
+    "lat": 12.9168276,
+    "lon": 80.194535,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "4/903A",
+      "addr:postcode": "600100",
+      "addr:street": "Dr.Anna Street, Ambedkar Nagar, Medavakkam",
+      "air_conditioning": "yes",
+      "amenity": "dentist",
+      "email": "smilesquaddentalclinic@gmail.com",
+      "name": "Smile Squad Dental Clinic",
+      "opening_hours": "Mo-Su 10:00-21:00",
+      "payment:cash": "yes",
+      "payment:credit_cards": "yes",
+      "payment:debit_cards": "yes",
+      "payment:mastercard": "yes",
+      "payment:visa": "yes",
+      "phone": "+916269626989",
+      "website": "https://www.smilesquaddentistry.com/"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11496646532,
+    "lat": 13.1021903,
+    "lon": 80.2819289,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "M.K. Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11513712397,
+    "lat": 13.0993143,
+    "lon": 80.2866002,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Broadway Dental & Face Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11513816703,
+    "lat": 13.1014448,
+    "lon": 80.2832858,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Ram Dental Clinic"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11517017883,
+    "lat": 12.8926234,
+    "lon": 80.1839373,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Dentist"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11533319916,
+    "lat": 13.1000792,
+    "lon": 80.2848974,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Globe Dental Care"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11804254199,
+    "lat": 12.8705153,
+    "lon": 80.2233736,
+    "tags": {
+      "amenity": "hospital",
+      "emergency": "no",
+      "healthcare": "hospital",
+      "image": "https://college4u.in/wp-content/uploads/2017/04/SAT.jpg",
+      "name": "Dental College & Hospital"
+    }
+  },
+  {
+    "type": "node",
+    "id": 11936238981,
+    "lat": 13.083741,
+    "lon": 80.2192626,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Smile centre"
+    }
+  },
+  {
+    "type": "node",
+    "id": 12611339402,
+    "lat": 12.9130691,
+    "lon": 80.1918438,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Kavi Dental Clinic",
+      "phone": "7397398561;7550017331"
+    }
+  },
+  {
+    "type": "node",
+    "id": 12698236801,
+    "lat": 12.9132504,
+    "lon": 80.1920952,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Elite Dental"
+    }
+  },
+  {
+    "type": "node",
+    "id": 12968985301,
+    "lat": 13.0832326,
+    "lon": 80.1802216,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:housenumber": "555",
+      "addr:postcode": "600037",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "MaxHealth Dental Clinic",
+      "opening_hours": "Mo-Sa 10:00-13:00,17:30-19:30",
+      "phone": "9884838148",
+      "wheelchair": "no"
+    }
+  },
+  {
+    "type": "node",
+    "id": 13127975755,
+    "lat": 13.0124158,
+    "lon": 80.2272818,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "JD Dental and Implant center"
+    }
+  },
+  {
+    "type": "node",
+    "id": 13184762002,
+    "lat": 13.0008791,
+    "lon": 80.2591799,
+    "tags": {
+      "amenity": "dentist",
+      "name": "Smile Mantra"
+    }
+  },
+  {
+    "type": "node",
+    "id": 13964108028,
+    "lat": 12.8958173,
+    "lon": 80.1826197,
+    "tags": {
+      "amenity": "dentist",
+      "name": "\u0b9c\u0bbf.\u0baa\u0bbf.\u0b86\u0bb0\u0bcd \u0baa\u0bb2\u0bcd \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5\u0bae\u0ba9\u0bc8",
+      "phone": "+91 9600300929"
+    }
+  },
+  {
+    "type": "node",
+    "id": 14045662227,
+    "lat": 12.988013,
+    "lon": 80.2168158,
+    "tags": {
+      "addr:city": "Chennai",
+      "addr:postcode": "600042",
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "Thanvik Smile Care",
+      "name:ta": "\u0ba4\u0ba9\u0bcd\u0bb5\u0bbf\u0b95\u0bcd \u0baa\u0bb2\u0bcd \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5\u0bae\u0ba9\u0bc8",
+      "phone": "+919080893176"
+    }
+  },
+  {
+    "type": "node",
+    "id": 14098908794,
+    "lat": 12.927999,
+    "lon": 80.1163811,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "healthcare:speciality": "implantology",
+      "name": "Dr. Rajendran Multispeciality Dental Clinic",
+      "opening_hours": "Mo-Fr 10:30-13:00,18:00-20:30; Sa 09:00-17:00; PH closed"
+    }
+  },
+  {
+    "type": "node",
+    "id": 14119518434,
+    "lat": 13.0394129,
+    "lon": 80.252737,
+    "tags": {
+      "amenity": "dentist",
+      "healthcare": "dentist",
+      "name": "N.R. Krishnaswamy"
+    }
+  },
+  {
+    "type": "way",
+    "id": 219390066,
+    "center": {
+      "lat": 12.9440152,
+      "lon": 80.207759
+    },
+    "nodes": [
+      2285527203,
+      2285527205,
+      12534252948,
+      2285527035,
+      2285527025,
+      3876130898,
+      2285527203
+    ],
+    "tags": {
+      "amenity": "college",
+      "check_date": "2025-01-26",
+      "name": "Balaji Dental college"
+    }
+  },
+  {
+    "type": "way",
+    "id": 231052536,
+    "center": {
+      "lat": 13.0920868,
+      "lon": 80.218563
+    },
+    "nodes": [
+      2394697635,
+      2394697636,
+      2394697637,
+      2394697638,
+      2394697635
+    ],
+    "tags": {
+      "amenity": "hospital",
+      "building": "yes",
+      "healthcare": "hospital",
+      "name": "Vasan Dental Care"
+    }
+  },
+  {
+    "type": "way",
+    "id": 354476750,
+    "center": {
+      "lat": 13.0752072,
+      "lon": 80.185866
+    },
+    "nodes": [
+      3601963974,
+      3601963948,
+      3601963947,
+      3601963973,
+      3601963974
+    ],
+    "tags": {
+      "building": "yes",
+      "building:levels": "2",
+      "name": "Trinity Dental Clinic"
+    }
+  },
+  {
+    "type": "way",
+    "id": 354840226,
+    "center": {
+      "lat": 13.0519005,
+      "lon": 80.2292607
+    },
+    "nodes": [
+      3605006167,
+      3605006158,
+      3605006126,
+      3605006129,
+      3605006167
+    ],
+    "tags": {
+      "addr:street": "Tailor Estate 2nd Street",
+      "amenity": "hospital",
+      "healthcare": "hospital",
+      "name": "R.R Dental Hospital"
+    }
+  },
+  {
+    "type": "way",
+    "id": 772410450,
+    "center": {
+      "lat": 12.8617243,
+      "lon": 80.137036
+    },
+    "nodes": [
+      7211551402,
+      7211551366,
+      7211551365,
+      7211551399,
+      7211551367,
+      7211551375,
+      7211551374,
+      7211551372,
+      7211551373,
+      7211551371,
+      7211551368,
+      7211551370,
+      7211551369,
+      7211551400,
+      7211551377,
+      7211551376,
+      7211551378,
+      7211551384,
+      7211551383,
+      7211551382,
+      7211551381,
+      7211551380,
+      7211551379,
+      7211551385,
+      7211551387,
+      7211551386,
+      7211551391,
+      7211551388,
+      7211551389,
+      7211551390,
+      7211551392,
+      7211551393,
+      7211551401,
+      7211551394,
+      7211551397,
+      7211551396,
+      7211551395,
+      7211551398,
+      7211551402
+    ],
+    "tags": {
+      "amenity": "college",
+      "name": "Tagore Dental College And Hospital",
+      "name:etymology:wikidata": "Q7241",
+      "website": "https://www.tagoredentalcollege.com/"
+    }
+  }
+]

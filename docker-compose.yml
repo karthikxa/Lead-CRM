@@ -36,11 +36,11 @@ services:
       - server-local-data:/app/packages/twenty-server/.local-storage
       - ./branding/patch-branding.sh:/app/patch-branding.sh:ro
       - ./lead_scraper_service.js:/app/packages/twenty-server/dist/lead_scraper_service.js
-      - ./lead_finder_ui.js:/app/packages/twenty-server/dist/front/lead_finder_ui.js
+      - ./lead_finder_ui.js:/tmp/lead_finder_ui.js:ro
       - ./lead_scraper_providers:/app/packages/twenty-server/dist/lead_scraper_providers:ro
     ports:
       - "${PORT:-3000}:3000"
-    entrypoint: ["/bin/sh", "-c", "sh /app/patch-branding.sh; exec /app/entrypoint.sh node dist/main"]
+    entrypoint: ["/bin/sh", "-c", "cp /tmp/lead_finder_ui.js /app/packages/twenty-server/dist/front/lead_finder_ui.js 2>/dev/null || true; sh /app/patch-branding.sh; cp /tmp/lead_finder_ui.js /app/packages/twenty-server/dist/front/lead_finder_ui.js 2>/dev/null || true; exec /app/entrypoint.sh node dist/main"]
     environment:
       NODE_PORT: 3000
       SCRAPLING_URL: http://scrapling-sidecar:8000
